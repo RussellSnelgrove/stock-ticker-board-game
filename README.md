@@ -1,132 +1,131 @@
-# Stock Ticker App
+# Stock Ticker
 
-A digital version of the classic Stock Ticker board game, built with Ruby on Rails.
+A real-time multiplayer web app based on the classic Stock Ticker board game. Players buy and sell shares in Gold, Silver, Bonds, Grain, Industrial, and Oil. With dice-driven price swings, stock splits, and dividends. Built with Ruby on Rails, Action Cable, Memcached, and Yugabyte. Supports solo play, drop-in/drop-out sessions, and live chat.
+
+## Table of Contents
+
+- [Game Overview](#game-overview)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Getting Started](#getting-started)
+- [Docker Setup](#docker-setup)
+- [Running Tests](#running-tests)
+- [Project Structure](#project-structure)
+- [Contributing](#contributing)
 
 ## Game Overview
 
-Players buy and sell shares in 6 commodities — **Gold, Silver, Bonds, Grain, Industrial, and Oil**. Each turn, dice rolls determine which stock moves, the direction (Up, Down, or Dividend), and the amount. Stocks can split at the top or become worthless at the bottom. The player with the highest net worth at the end wins.
+Stock Ticker is a classic board game where players compete to build the highest net worth by trading shares in 6 commodities. All stocks start the game at **$1.00**. Each turn, three dice are rolled to determine:
 
-## Tasks
+| Die   | Determines              | Possible Values                             |
+| ----- | ----------------------- | ------------------------------------------- |
+| Die 1 | Which stock is affected | Gold, Silver, Bonds, Grain, Industrial, Oil |
+| Die 2 | Direction of movement   | Up, Down, Dividend                          |
+| Die 3 | Amount of change        | $0.05, $0.10 or $0.20                       |
 
-### 1. Create a basic Ruby on Rails app
-- [ ] Install Ruby and Rails
-- [ ] Scaffold a new Rails project (`rails new stock-ticker`)
-- [ ] Set up the database (Yugabyte)
-- [ ] Verify the app runs locally (`rails server`)
-- [ ] Set up a Git repository and make an initial commit
+- **Stock Splits** — When a stock reaches $2.00, all holders' shares double and the price resets.
+- **Worthless Stocks** — When a stock drops to $0, all shares are wiped out.
+- **Dividends** — All holders receive a payout based on the stock's current value.
 
-### 2. Add Sorbet for type safety
-- [ ] Install the `sorbet` and `tapioca` gems
-- [ ] Run `tapioca init` to generate RBI files
-- [ ] Configure Sorbet strictness levels per file
-- [ ] Add typed signatures (`sig`) to models, services, and controllers as they are built
-- [ ] Integrate Sorbet type checking into the development workflow
+The game ends at an agreed-upon time, and the player with the highest net worth (cash + portfolio value) wins.
 
-### 3. Build the Stock Ticker data models
-- [ ] Create a `Stock` model for the 6 commodities (Gold, Silver, Bonds, Grain, Industrial, Oil)
-- [ ] Each stock has a name, current price (range $1.00–$6.00), and status (active/worthless)
-- [ ] Create a `Game` model to track game state (status, current turn, start time, end time)
-- [ ] Create a `Player` model linked to a User and a Game (starting cash: $5,000)
-- [ ] Create a `Holding` model to track shares owned per player per stock
-- [ ] Create a `Transaction` model to log all buys, sells, dividends, and splits
-- [ ] Create a `DiceRoll` model to record each turn's roll results
-- [ ] Add validations and associations between all models
-- [ ] Add Sorbet type signatures to all models
-- [ ] Seed the database with the 6 default stocks at starting prices
-- [ ] Write unit tests for all model validations and associations
+## Features
 
-### 4. Implement game sessions
-- [ ] Create a `Session` model to represent a game session (name, invite code, host, status)
-- [ ] Allow a user to create a new session, which starts a new game
-- [ ] Allow users to invite friends to a session via a shareable link or code
-- [ ] Support **solo games** — a single player can create and play alone
-- [ ] Allow solo players to **save and resume** a game later
-- [ ] Allow players to **drop out** of a multiplayer game while preserving their state
-- [ ] Allow players to **rejoin** a game they previously left
-- [ ] Allow players to **join an ongoing game** mid-session
-- [ ] Track player presence (online/offline) within a session
-- [ ] Write unit tests for session creation, joining, leaving, and rejoining
+- **Multiplayer sessions** — Create a game and invite friends via a shareable code
+- **Solo play** — Play alone with the ability to save and resume later
+- **Drop-in/drop-out** — Players can leave and rejoin games without losing their state
+- **Real-time updates** — Stock prices, dice rolls, and leaderboards update live via WebSockets
+- **In-game chat** — Talk with other players during the game
+- **Type-safe codebase** — Sorbet for static type checking across the app
 
-### 5. Implement the dice and turn mechanics
-- [ ] Build a dice rolling service that produces 3 results per turn:
-  - **Die 1**: Which stock is affected (Gold, Silver, Bonds, Grain, Industrial, Oil)
-  - **Die 2**: Direction (Up, Down, or Dividend)
-  - **Die 3**: Amount ($1 or $5 movement)
-- [ ] Apply price changes to the affected stock after each roll
-- [ ] Handle **stock splits** — when a stock reaches the top ($6.00), all holders' shares double and price resets
-- [ ] Handle **worthless stocks** — when a stock drops to $0, all shares are wiped out
-- [ ] Handle **dividends** — pay out a percentage of the stock's current value to all holders
-- [ ] Enforce turn order so players roll and trade in sequence
-- [ ] Skip turns for players who have dropped out
-- [ ] Write unit tests for dice rolling, price changes, splits, worthless stocks, and dividends
+## Tech Stack
 
-### 6. Implement buying and selling
-- [ ] Allow players to buy shares at the current stock price on their turn
-- [ ] Allow players to sell shares at the current stock price on their turn
-- [ ] Validate sufficient cash for purchases
-- [ ] Validate sufficient shares for sales
-- [ ] Shares are bought/sold in lots (e.g., multiples of 100)
-- [ ] Update player cash and holdings after each transaction
-- [ ] Log all transactions for game history
-- [ ] Write unit tests for buy/sell validation, transactions, and edge cases
+| Component        | Technology                        |
+| ---------------- | --------------------------------- |
+| Framework        | Ruby on Rails                     |
+| Database         | Yugabyte                          |
+| Caching          | Memcached                         |
+| Real-time        | Action Cable (WebSockets) + Redis |
+| Type Checking    | Sorbet                            |
+| Authentication   | Devise                            |
+| Containerization | Docker + Docker Compose           |
 
-### 7. Add Memcached caching layer
-- [ ] Set up a Memcached instance (local and Docker)
-- [ ] Cache active game state (stock prices, player holdings, turn info) in Memcached
-- [ ] Periodically write cached game state back to Yugabyte
-- [ ] Invalidate cache on critical events (game over, player join/leave)
-- [ ] Use caching for the leaderboard and session listings
-- [ ] Write tests to verify cache read/write and persistence sync
+## Getting Started
 
-### 8. Build the game UI
-- [ ] Create a game lobby where players can create, join, or resume a session
-- [ ] Display available sessions and active games
-- [ ] Build the main game board showing all 6 stocks and their current prices
-- [ ] Display each player's cash balance and holdings
-- [ ] Show player presence indicators (online/offline/dropped)
-- [ ] Add a dice roll animation and results display
-- [ ] Build buy/sell controls for the active player's turn
-- [ ] Show a transaction history / activity feed
-- [ ] Build a net worth leaderboard (cash + portfolio value)
-- [ ] Add a save game button for solo players
-- [ ] Add a game-over screen with final rankings
+### Prerequisites
 
-### 9. Add real-time updates with Action Cable
-- [ ] Set up Action Cable for WebSocket support
-- [ ] Broadcast stock price changes to all players in real time
-- [ ] Broadcast dice roll results to all players
-- [ ] Update the leaderboard in real time
-- [ ] Notify players when it's their turn
-- [ ] Broadcast player join/leave/rejoin events to the session
-- [ ] Write integration tests for WebSocket broadcasts
+- Ruby 3.x
+- Rails 7.x
+- Yugabyte (or PostgreSQL for local development)
+- Redis
+- Memcached
 
-### 10. Add a real-time chat room
-- [ ] Create a `Message` model (user, game, body, timestamp)
-- [ ] Build a chat room UI within the game view
-- [ ] Allow players to send and receive messages in real time via Action Cable
-- [ ] Display active players in the chat
-- [ ] Write tests for message creation and delivery
+### Installation
 
-### 11. Add authentication and external access
-- [ ] Add user authentication (Devise or a custom solution)
-- [ ] Implement password-protected access for external users
-- [ ] Set up HTTPS / SSL for secure connections
-- [ ] Configure the app for external network access (port forwarding, domain, or tunneling)
-- [ ] Add role-based access control (admin/host vs. player)
-- [ ] Write tests for authentication and authorization
+```bash
+# Clone the repository
+git clone https://github.com/your-username/stock-ticker.git
+cd stock-ticker
 
-### 12. Dockerize the app
-- [ ] Write a `Dockerfile` for the Rails app
-- [ ] Create a `docker-compose.yml` with app, Yugabyte, Memcached, and Redis services
-- [ ] Configure environment variables via `.env` file
-- [ ] Test building and running the app in Docker
-- [ ] Document Docker setup instructions in this README
+# Install dependencies
+bundle install
 
-### 13. Write the game rules document
-- [ ] Create a `RULES.md` file with full game rules and how to play
-- [ ] Include commodity descriptions and starting prices
-- [ ] Document dice mechanics (3-die system, outcomes)
-- [ ] Explain stock splits, worthless stocks, and dividends
-- [ ] Cover buying/selling rules and lot sizes
-- [ ] Describe session types (solo vs. multiplayer)
-- [ ] Add win conditions and scoring
+# Set up the database
+rails db:create db:migrate db:seed
+
+# Start the server
+rails server
+```
+
+Visit `http://localhost:3000` to start playing.
+
+## Docker Setup
+
+```bash
+# Build and start all services
+docker-compose up --build
+
+# Run database migrations
+docker-compose exec app rails db:create db:migrate db:seed
+```
+
+The `docker-compose.yml` includes the Rails app, Yugabyte, Memcached, and Redis.
+
+## Running Tests
+
+```bash
+# Run the full test suite
+bundle exec rails test
+
+# Run Sorbet type checks
+bundle exec srb tc
+```
+
+## Project Structure
+
+```
+stock-ticker/
+├── app/
+│   ├── channels/        # Action Cable channels (GameChannel, ChatChannel)
+│   ├── controllers/     # Game, session, and trading controllers
+│   ├── models/          # Stock, Game, Player, Holding, Transaction, DiceRoll
+│   ├── services/        # DiceRollingService, TradingService, CacheService
+│   └── views/           # Game board, lobby, chat, and leaderboard UI
+├── config/
+├── db/
+│   ├── migrate/         # Database migrations
+│   └── seeds.rb         # Default stock data
+├── test/                # Unit and integration tests
+├── Dockerfile
+├── docker-compose.yml
+├── RULES.md             # Full game rules and how to play
+└── README.md
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/my-feature`)
+3. Commit your changes (`git commit -m "Add my feature"`)
+4. Push to the branch (`git push origin feature/my-feature`)
+5. Open a Pull Request
