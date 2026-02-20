@@ -1,6 +1,6 @@
 # Stock Ticker
 
-A real-time multiplayer web app based on the classic Stock Ticker board game. Players buy and sell shares in Gold, Silver, Bonds, Grain, Industrial, and Oil. With dice-driven price swings, stock splits, and dividends. Built with Ruby on Rails, Action Cable, Memcached, and Yugabyte. Supports solo play, drop-in/drop-out sessions, and live chat.
+A real-time multiplayer web app based on the classic Stock Ticker board game. Players buy and sell shares in Gold, Silver, Bonds, Grain, Industrial, and Oil. With dice-driven price swings, stock splits, and dividends. Built with Ruby on Rails, GraphQL (graphql-ruby), Memcached, and Yugabyte. Supports solo play, drop-in/drop-out sessions, and live chat.
 
 ## Table of Contents
 
@@ -34,21 +34,23 @@ The game ends at an agreed-upon time, and the player with the highest net worth 
 - **Multiplayer sessions** — Create a game and invite friends via a shareable code
 - **Solo play** — Play alone with the ability to save and resume later
 - **Drop-in/drop-out** — Players can leave and rejoin games without losing their state
-- **Real-time updates** — Stock prices, dice rolls, and leaderboards update live via WebSockets
+- **GraphQL API** — All game data exposed through a single, flexible GraphQL endpoint
+- **Real-time updates** — Stock prices, dice rolls, and leaderboards update live via GraphQL subscriptions
 - **In-game chat** — Talk with other players during the game
 - **Type-safe codebase** — Sorbet for static type checking across the app
 
 ## Tech Stack
 
-| Component        | Technology                        |
-| ---------------- | --------------------------------- |
-| Framework        | Ruby on Rails                     |
-| Database         | Yugabyte                          |
-| Caching          | Memcached                         |
-| Real-time        | Action Cable (WebSockets) + Redis |
-| Type Checking    | Sorbet                            |
-| Authentication   | Devise                            |
-| Containerization | Docker + Docker Compose           |
+| Component        | Technology                                     |
+| ---------------- | ---------------------------------------------- |
+| Framework        | Ruby on Rails                                  |
+| API              | GraphQL (graphql-ruby)                         |
+| Database         | Yugabyte                                       |
+| Caching          | Memcached                                      |
+| Real-time        | GraphQL Subscriptions via Action Cable + Redis |
+| Type Checking    | Sorbet                                         |
+| Authentication   | Devise                                         |
+| Containerization | Docker + Docker Compose                        |
 
 ## Getting Started
 
@@ -106,8 +108,13 @@ bundle exec srb tc
 ```
 stock-ticker/
 ├── app/
-│   ├── channels/        # Action Cable channels (GameChannel, ChatChannel)
-│   ├── controllers/     # Game, session, and trading controllers
+│   ├── channels/        # Action Cable channels (GraphQL subscriptions transport)
+│   ├── controllers/     # GraphqlController (single endpoint)
+│   ├── graphql/
+│   │   ├── types/       # GraphQL object types (StockType, GameType, PlayerType, etc.)
+│   │   ├── mutations/   # GraphQL mutations (BuyShares, SellShares, RollDice, etc.)
+│   │   ├── queries/     # GraphQL queries (game state, leaderboard, session list)
+│   │   └── subscriptions/ # GraphQL subscriptions (price updates, chat, turn notifications)
 │   ├── models/          # Stock, Game, Player, Holding, Transaction, DiceRoll
 │   ├── services/        # DiceRollingService, TradingService, CacheService
 │   └── views/           # Game board, lobby, chat, and leaderboard UI
