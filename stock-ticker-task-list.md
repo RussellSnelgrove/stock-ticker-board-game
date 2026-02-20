@@ -4,7 +4,7 @@ A digital version of the classic Stock Ticker board game, built with Ruby on Rai
 
 ## Game Overview
 
-Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Industrial, and Oil**. Each turn, dice rolls determine which stock moves, the direction (Up, Down, or Dividend), and the amount. Stock prices range from $0.00 to $2.00. Stocks split at $2.00 or become worthless at $0. The player with the highest net worth at the end wins.
+Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Industrial, and Oil**. Each game maintains its own stock prices, starting at $1.00. Each turn, dice rolls determine which stock moves, the direction (Up, Down, or Dividend), and the amount. Stock prices range from $0.00 to $2.00. Stocks split at $2.00 or become worthless at $0. Dividends are only paid when the stock is priced at $1.00 or higher. The player with the highest net worth at the end wins.
 
 ## Tasks
 
@@ -16,15 +16,7 @@ Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Indu
 - [ ] Verify the app runs locally (`rails server`)
 - [ ] Set up a Git repository and make an initial commit
 
-### 2. Add Sorbet for type safety
-
-- [ ] Install the `sorbet` and `tapioca` gems
-- [ ] Run `tapioca init` to generate RBI files
-- [ ] Configure Sorbet strictness levels per file
-- [ ] Add typed signatures (`sig`) to models, services, and controllers as they are built
-- [ ] Integrate Sorbet type checking into the development workflow
-
-### 3. Set up GraphQL
+### 2. Set up GraphQL
 
 - [ ] Add the `graphql-ruby` gem to the Gemfile
 - [ ] Run the GraphQL generator (`rails generate graphql:install`)
@@ -32,58 +24,66 @@ Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Indu
 - [ ] Set up the base `StockTickerSchema` with query, mutation, and subscription root types
 - [ ] Configure Action Cable as the GraphQL subscriptions transport
 - [ ] Add GraphiQL or GraphQL Playground for development (via `graphiql-rails` gem)
-- [ ] Add Sorbet type signatures to the schema and controller
 - [ ] Write a smoke test that queries the GraphQL endpoint successfully
+
+### 3. Add Sorbet for type safety
+
+- [ ] Install the `sorbet` and `tapioca` gems
+- [ ] Run `tapioca init` to generate RBI files (including RBIs for `graphql-ruby`)
+- [ ] Configure Sorbet strictness levels per file
+- [ ] Add typed signatures (`sig`) to the GraphQL schema, controller, models, and services as they are built
+- [ ] Integrate Sorbet type checking into the development workflow
 
 ### 4. Build the Stock Ticker data models
 
-- [ ] Create a `Stock` model for the 6 commodities (Gold, Silver, Bonds, Grain, Industrial, Oil)
-- [ ] Each stock has a name, current price (range $0.00–$2.00), and status (active/worthless)
-- [ ] Create a `Game` model to track game state (status, current turn, start time, end time)
+- [ ] Create a `Stock` model as a static lookup for the 6 commodities (Gold, Silver, Bonds, Grain, Industrial, Oil)
+- [ ] Create a `GameStock` model (belongs to `Game` and `Stock`) to track each stock's price and status within a game
+  - Fields: `current_price` (range $0.00–$2.00), `status` (active/worthless)
+  - Each game gets its own set of 6 `GameStock` records initialized at $1.00
+- [ ] Create a `Game` model to represent a game session and its state (name, invite code, host, status, current turn, start time, end time)
 - [ ] Create a `Player` model linked to a User and a Game (starting cash: $5,000)
-- [ ] Create a `Holding` model to track shares owned per player per stock
+- [ ] Create a `Holding` model to track shares owned per player per `GameStock`
 - [ ] Create a `Transaction` model to log all buys, sells, dividends, and splits
 - [ ] Create a `DiceRoll` model to record each turn's roll results
 - [ ] Add validations and associations between all models
 - [ ] Add Sorbet type signatures to all models
-- [ ] Define GraphQL types for each model (`StockType`, `GameType`, `PlayerType`, `HoldingType`, `TransactionType`, `DiceRollType`)
-- [ ] Seed the database with the 6 default stocks at a starting price of $1.00
+- [ ] Define GraphQL types for each model (`GameStockType`, `GameType`, `PlayerType`, `HoldingType`, `TransactionType`, `DiceRollType`)
+- [ ] Seed the database with the 6 static `Stock` records
 - [ ] Write unit tests for all model validations and associations
 
-### 5. Implement game sessions
+### 5. Implement game lifecycle
 
-- [ ] Create a `Session` model to represent a game session (name, invite code, host, status)
-- [ ] Define a `CreateSession` mutation to start a new game session
-- [ ] Define a `JoinSession` mutation to join via invite code
-- [ ] Define a `LeaveSession` mutation to drop out while preserving state
-- [ ] Define a `RejoinSession` mutation to rejoin a previously left game
-- [ ] Add a `sessions` query to list available and active games
-- [ ] Add a `session` query to fetch a single session by ID or invite code
+- [ ] Define a `CreateGame` mutation to start a new game (generates an invite code, initializes 6 `GameStock` records at $1.00)
+- [ ] Define a `JoinGame` mutation to join via invite code
+- [ ] Define a `LeaveGame` mutation to drop out while preserving state
+- [ ] Define a `RejoinGame` mutation to rejoin a previously left game
+- [ ] Add a `games` query to list available and active games
+- [ ] Add a `game` query to fetch a single game by ID or invite code
 - [ ] Support **solo games** — a single player can create and play alone
 - [ ] Allow solo players to **save and resume** a game later via a `SaveGame` mutation
-- [ ] Allow players to **join an ongoing game** mid-session
-- [ ] Track player presence (online/offline) within a session
-- [ ] Write unit tests for session mutations and queries
+- [ ] Allow players to **join an ongoing game** mid-progress
+- [ ] Track player presence (online/offline) within a game
+- [ ] Write unit tests for game lifecycle mutations and queries
 
 ### 6. Implement the dice and turn mechanics
 
 - [ ] Build a dice rolling service that produces 3 results per turn:
   - **Die 1**: Which stock is affected (Gold, Silver, Bonds, Grain, Industrial, Oil)
   - **Die 2**: Direction (Up, Down, or Dividend)
-  - **Die 3**: Amount ($1 or $5 movement)
+  - **Die 3**: Amount ($0.05, $0.10 or $0.20 movement)
 - [ ] Define a `RollDice` mutation that invokes the dice service and returns the roll result
-- [ ] Apply price changes to the affected stock after each roll
-- [ ] Handle **stock splits** — when a stock reaches $2.00, all holders' shares double and price resets
-- [ ] Handle **worthless stocks** — when a stock drops to $0, all shares are wiped out
-- [ ] Handle **dividends** — pay out a percentage of the stock's current value to all holders
+- [ ] Apply price changes to the affected `GameStock` after each roll
+- [ ] Handle **stock splits** — when a `GameStock` reaches $2.00, all holders' shares double and price resets
+- [ ] Handle **worthless stocks** — when a `GameStock` drops to $0, all shares are wiped out
+- [ ] Handle **dividends** — pay out a percentage of the stock's current value to all holders; dividends only take effect when the `GameStock` price is $1.00 or higher (rolls below $1.00 have no effect)
 - [ ] Enforce turn order so players roll and trade in sequence
 - [ ] Skip turns for players who have dropped out
 - [ ] Write unit tests for the `RollDice` mutation, price changes, splits, worthless stocks, and dividends
 
 ### 7. Implement buying and selling
 
-- [ ] Define a `BuyShares` mutation to purchase shares at the current stock price
-- [ ] Define a `SellShares` mutation to sell shares at the current stock price
+- [ ] Define a `BuyShares` mutation to purchase shares at the `GameStock`'s current price
+- [ ] Define a `SellShares` mutation to sell shares at the `GameStock`'s current price
 - [ ] Validate sufficient cash for purchases (return GraphQL user errors on failure)
 - [ ] Validate sufficient shares for sales (return GraphQL user errors on failure)
 - [ ] Shares are bought/sold in lots (e.g., multiples of 100)
@@ -98,14 +98,14 @@ Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Indu
 - [ ] Cache active game state (stock prices, player holdings, turn info) in Memcached
 - [ ] Periodically write cached game state back to Yugabyte
 - [ ] Invalidate cache on critical events (game over, player join/leave)
-- [ ] Use caching for the leaderboard and session listings
+- [ ] Use caching for the leaderboard and game listings
 - [ ] Write tests to verify cache read/write and persistence sync
 
 ### 9. Build the game UI
 
-- [ ] Create a game lobby powered by GraphQL queries (`sessions`, `session`)
-- [ ] Display available sessions and active games
-- [ ] Build the main game board showing all 6 stocks and their current prices (via GraphQL query)
+- [ ] Create a game lobby powered by GraphQL queries (`games`, `game`)
+- [ ] Display available and active games
+- [ ] Build the main game board showing all 6 `GameStock` records and their current prices (via GraphQL query)
 - [ ] Display each player's cash balance and holdings
 - [ ] Show player presence indicators (online/offline/dropped) via subscriptions
 - [ ] Add a dice roll animation triggered by the `RollDice` mutation response
@@ -117,7 +117,7 @@ Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Indu
 
 ### 10. Add real-time updates with GraphQL subscriptions
 
-- [ ] Define a `StockPriceUpdated` subscription to push price changes to all players
+- [ ] Define a `GameStockPriceUpdated` subscription to push per-game price changes to all players in that game
 - [ ] Define a `DiceRolled` subscription to broadcast roll results in real time
 - [ ] Define a `LeaderboardUpdated` subscription to push net worth changes
 - [ ] Define a `TurnChanged` subscription to notify players when it's their turn
@@ -161,5 +161,5 @@ Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Indu
 - [ ] Document dice mechanics (3-die system, outcomes)
 - [ ] Explain stock splits, worthless stocks, and dividends
 - [ ] Cover buying/selling rules and lot sizes
-- [ ] Describe session types (solo vs. multiplayer)
+- [ ] Describe game types (solo vs. multiplayer)
 - [ ] Add win conditions and scoring

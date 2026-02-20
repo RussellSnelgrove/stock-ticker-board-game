@@ -15,7 +15,7 @@ A real-time multiplayer web app based on the classic Stock Ticker board game. Pl
 
 ## Game Overview
 
-Stock Ticker is a classic board game where players compete to build the highest net worth by trading shares in 6 commodities. All stocks start the game at **$1.00**. Each turn, three dice are rolled to determine:
+Stock Ticker is a classic board game where players compete to build the highest net worth by trading shares in 6 commodities. Each game maintains its own stock prices — all stocks start at **$1.00** per game. Each turn, three dice are rolled to determine:
 
 | Die   | Determines              | Possible Values                             |
 | ----- | ----------------------- | ------------------------------------------- |
@@ -25,13 +25,13 @@ Stock Ticker is a classic board game where players compete to build the highest 
 
 - **Stock Splits** — When a stock reaches $2.00, all holders' shares double and the price resets.
 - **Worthless Stocks** — When a stock drops to $0, all shares are wiped out.
-- **Dividends** — All holders receive a payout based on the stock's current value.
+- **Dividends** — When a dividend is rolled for a stock priced at $1.00 or higher, all holders receive a payout based on the stock's current value. Dividends rolled for stocks below $1.00 have no effect.
 
 The game ends at an agreed-upon time, and the player with the highest net worth (cash + portfolio value) wins.
 
 ## Features
 
-- **Multiplayer sessions** — Create a game and invite friends via a shareable code
+- **Multiplayer games** — Create a game and invite friends via a shareable code
 - **Solo play** — Play alone with the ability to save and resume later
 - **Drop-in/drop-out** — Players can leave and rejoin games without losing their state
 - **GraphQL API** — All game data exposed through a single, flexible GraphQL endpoint
@@ -111,17 +111,17 @@ stock-ticker/
 │   ├── channels/        # Action Cable channels (GraphQL subscriptions transport)
 │   ├── controllers/     # GraphqlController (single endpoint)
 │   ├── graphql/
-│   │   ├── types/       # GraphQL object types (StockType, GameType, PlayerType, etc.)
+│   │   ├── types/       # GraphQL object types (GameStockType, GameType, PlayerType, etc.)
 │   │   ├── mutations/   # GraphQL mutations (BuyShares, SellShares, RollDice, etc.)
-│   │   ├── queries/     # GraphQL queries (game state, leaderboard, session list)
+│   │   ├── queries/     # GraphQL queries (game state, leaderboard, game list)
 │   │   └── subscriptions/ # GraphQL subscriptions (price updates, chat, turn notifications)
-│   ├── models/          # Stock, Game, Player, Holding, Transaction, DiceRoll
+│   ├── models/          # Stock, GameStock, Game, Player, Holding, Transaction, DiceRoll, Message
 │   ├── services/        # DiceRollingService, TradingService, CacheService
 │   └── views/           # Game board, lobby, chat, and leaderboard UI
 ├── config/
 ├── db/
 │   ├── migrate/         # Database migrations
-│   └── seeds.rb         # Default stock data
+│   └── seeds.rb         # The 6 default stock commodities
 ├── test/                # Unit and integration tests
 ├── Dockerfile
 ├── docker-compose.yml
