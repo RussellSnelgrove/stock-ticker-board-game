@@ -1,6 +1,6 @@
 # Stock Ticker
 
-A real-time multiplayer web app based on the classic Stock Ticker board game. Players buy and sell shares in Gold, Silver, Bonds, Grain, Industrial, and Oil. With dice-driven price swings, stock splits, and dividends. Built with Ruby on Rails, GraphQL (graphql-ruby), Memcached, and Yugabyte. Supports solo play, drop-in/drop-out sessions, and live chat.
+A real-time multiplayer web app based on the classic Stock Ticker board game. Players buy and sell shares in Gold, Silver, Bonds, Grain, Industrial, and Oil. With dice-driven price swings, stock splits, and dividends. Built with Ruby on Rails, GraphQL (graphql-ruby), Redis, and Yugabyte. Supports solo play, drop-in/drop-out sessions, and live chat.
 
 ## Table of Contents
 
@@ -27,11 +27,12 @@ Stock Ticker is a classic board game where players compete to build the highest 
 - **Worthless Stocks** — When a stock drops to $0, all shares are wiped out.
 - **Dividends** — When a dividend is rolled for a stock priced at $1.00 or higher, all holders receive a payout based on the stock's current value. Dividends rolled for stocks below $1.00 have no effect.
 
-The game ends at an agreed-upon time, and the player with the highest net worth (cash + portfolio value) wins.
+When creating a game, the host selects a play duration (e.g., 30, 60, or 90 minutes). A game clock counts down in real time. When the timer reaches zero, all trading is frozen and the player with the highest net worth (cash + portfolio value) wins.
 
 ## Features
 
 - **Multiplayer games** — Create a game and invite friends via a shareable code
+- **Game clock** — Host selects a play duration at game creation; a countdown timer ends the game automatically
 - **Solo play** — Play alone with the ability to save and resume later
 - **Drop-in/drop-out** — Players can leave and rejoin games without losing their state
 - **GraphQL API** — All game data exposed through a single, flexible GraphQL endpoint
@@ -46,8 +47,7 @@ The game ends at an agreed-upon time, and the player with the highest net worth 
 | Framework        | Ruby on Rails                                  |
 | API              | GraphQL (graphql-ruby)                         |
 | Database         | Yugabyte                                       |
-| Caching          | Memcached                                      |
-| Real-time        | GraphQL Subscriptions via Action Cable + Redis |
+| Caching/Real-time| Redis (caching + Action Cable + GraphQL Subscriptions) |
 | Type Checking    | Sorbet                                         |
 | Authentication   | Devise                                         |
 | Containerization | Docker + Docker Compose                        |
@@ -60,7 +60,6 @@ The game ends at an agreed-upon time, and the player with the highest net worth 
 - Rails 7.x
 - Yugabyte (or PostgreSQL for local development)
 - Redis
-- Memcached
 
 ### Installation
 
@@ -91,7 +90,7 @@ docker-compose up --build
 docker-compose exec app rails db:create db:migrate db:seed
 ```
 
-The `docker-compose.yml` includes the Rails app, Yugabyte, Memcached, and Redis.
+The `docker-compose.yml` includes the Rails app, Yugabyte, and Redis.
 
 ## Running Tests
 
