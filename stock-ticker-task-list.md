@@ -4,7 +4,7 @@ A digital version of the classic Stock Ticker board game, built with Ruby on Rai
 
 ## Game Overview
 
-Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Industrial, and Oil**. Each game maintains its own stock prices, starting at $1.00. Each turn, dice rolls determine which stock moves, the direction (Up, Down, or Dividend), and the amount. Stock prices range from $0.00 to $2.00. Stocks split at $2.00 or become worthless at $0. Dividends are only paid when the stock is priced at $1.00 or higher. Each game runs on a countdown timer selected by the host. When the clock reaches zero, the player with the highest net worth wins.
+Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Industrial, and Oil**. Each game maintains its own stock prices, starting at $1.00. Each turn, dice rolls determine which stock moves, the direction (Up, Down, or Dividend), and the amount. Stock prices range from $0.00 to $2.00. Stocks split at $2.00; stocks that drop to $0 are wiped and reset to $1.00. Dividends are only paid when the stock is priced at $1.00 or higher. Each game runs on a countdown timer selected by the host. When the clock reaches zero, the player with the highest net worth wins.
 
 ## Tasks
 
@@ -39,13 +39,20 @@ Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Indu
 - [ ] Create a `User` model via Devise (email, password, display name) for authentication and player identity
 - [ ] Create a `Stock` model as a static lookup for the 6 commodities (Gold, Silver, Bonds, Grain, Industrial, Oil)
 - [ ] Create a `GameStock` model (belongs to `Game` and `Stock`) to track each stock's price and status within a game
-  - Fields: `current_price` (range $0.00–$2.00), `status` (active/worthless)
+  - Fields: `current_price` (range $0.00–$2.00)
   - Each game gets its own set of 6 `GameStock` records initialized at $1.00
-- [ ] Create a `Game` model to represent a game session and its state (name, invite code, host, status, current turn, duration, starts_at, ends_at, remaining_time)
-- [ ] Create a `Player` model linked to a User and a Game (starting cash: $5,000)
+- [ ] Create a `Game` model to represent a game session and its state:
+  - Fields: `name`, `invite_code`, `host` (belongs to `User`), `status`, `current_turn`, `duration`, `starts_at`, `ends_at`, `remaining_time`
+  - Status state machine: `waiting` (lobby, accepting players) -> `in_progress` (clock running) -> `paused` (solo only) -> `completed` (timer expired)
+  - Only mutations valid for the current status should be accepted (e.g., no rolling in "waiting", no trading in "completed")
+- [ ] Create a `Player` model linked to a User and a Game
+  - Fields: `cash` (starting at $5,000), `status` (active/dropped), `turn_position` (integer, set by join order)
 - [ ] Create a `Holding` model to track shares owned per player per `GameStock`
+  - Fields: `player_id`, `game_stock_id`, `quantity` (integer, multiples of 500)
 - [ ] Create a `Transaction` model to log all buys, sells, dividends, and splits
+  - Fields: `player_id`, `game_stock_id`, `transaction_type` (buy/sell/dividend/split/worthless_reset), `quantity`, `price_at_time`, `total_amount`, `turn_number`
 - [ ] Create a `DiceRoll` model to record each turn's roll results
+  - Fields: `game_id`, `player_id`, `turn_number`, `stock_rolled` (references `Stock`), `direction` (up/down/dividend), `amount` ($0.05/$0.10/$0.20)
 - [ ] Add validations and associations between all models
 - [ ] Add Sorbet type signatures to all models
 - [ ] Define GraphQL types for each model (`GameStockType`, `GameType`, `PlayerType`, `HoldingType`, `TransactionType`, `DiceRollType`)
@@ -54,29 +61,34 @@ Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Indu
 
 ### 5. Implement game lifecycle
 
-- [ ] Define a `CreateGame` mutation to start a new game (accepts a `duration` in minutes, generates an invite code, initializes 6 `GameStock` records at $1.00, computes `ends_at` from the selected duration)
-- [ ] Define a `JoinGame` mutation to join via invite code (if the player was previously in the game, restore their state; otherwise create a new `Player` record)
+- [ ] Define a `CreateGame` mutation (accepts a `duration` in minutes, generates an invite code, initializes 6 `GameStock` records at $1.00, sets status to "waiting" — clock does **not** start yet)
+- [ ] Define a `StartGame` mutation (host-only) to transition the game from "waiting" to "in_progress", compute `ends_at` from the duration, and schedule the game clock expiry job
+- [ ] Define a `JoinGame` mutation to join via invite code (if the player was previously in the game, restore their state; otherwise create a new `Player` record with $5,000 cash and 0 shares)
 - [ ] Define a `LeaveGame` mutation to drop out while preserving state
 - [ ] Add a `games` query to list available and active games
 - [ ] Add a `game` query to fetch a single game by ID or invite code (includes `ends_at` and remaining time)
 - [ ] Implement game clock expiry — schedule a background job (Active Job) that fires at `ends_at` to freeze all trading, compute final net worth for all players, and set game status to "completed"
 - [ ] Broadcast a `GameEnded` event when the timer expires with final rankings
-- [ ] Support **solo games** — a single player can create and play alone
+- [ ] Support **solo games** — only 1 player; host creates and starts the game alone
+- [ ] Multiplayer games have **no player limit**
+- [ ] Turn order is determined by **join order**; mid-game joins are appended to the end of the turn order
+- [ ] Mid-game joins always start with **$5,000 cash and 0 shares** regardless of when they join; they must wait for their turn to trade
 - [ ] Allow solo players to **pause and resume** a game later via a `PauseGame` mutation (stores `remaining_time` and stops the clock; `JoinGame` resumes the clock and recomputes `ends_at`)
-- [ ] Allow players to **join an ongoing game** mid-progress
 - [ ] Track player presence (online/offline) within a game
 - [ ] Write unit tests for game lifecycle mutations, game clock expiry, and queries
 
 ### 6. Implement the dice and turn mechanics
 
-- [ ] Build a dice rolling service that produces 3 results per turn:
-  - **Die 1**: Which stock is affected (Gold, Silver, Bonds, Grain, Industrial, Oil)
-  - **Die 2**: Direction (Up, Down, or Dividend)
-  - **Die 3**: Amount ($0.05, $0.10 or $0.20 movement)
+- [ ] Build a dice rolling service that produces 3 results per turn (all dice are **uniformly weighted** — each outcome is equally likely):
+  - **Die 1**: Which stock is affected (1/6 each: Gold, Silver, Bonds, Grain, Industrial, Oil)
+  - **Die 2**: Direction (1/3 each: Up, Down, or Dividend)
+  - **Die 3**: Amount (1/3 each: $0.05, $0.10 or $0.20 movement)
 - [ ] Define a `RollDice` mutation that invokes the dice service and returns the roll result
 - [ ] Apply price changes to the affected `GameStock` after each roll
-- [ ] Handle **stock splits** — when a `GameStock` reaches $2.00, all holders' shares double and the price resets to $1.00
-- [ ] Handle **worthless stocks** — when a `GameStock` drops to $0, all shares are wiped out
+- [ ] Share supply is **unlimited** — players may buy as many shares as they can afford
+- [ ] **Price floor**: $0.00 is the absolute minimum; any roll that would take a stock below $0 triggers the worthless behavior (wipe shares, reset to $1.00)
+- [ ] Handle **stock splits** — when a `GameStock` reaches or exceeds $2.00, cap at $2.00, double all holders' shares, and reset the price to $1.00 (no carry-over of excess amount)
+- [ ] Handle **worthless stocks** — when a `GameStock` drops to $0, all holders' shares are immediately removed and the stock resets to $1.00; play continues as normal
 - [ ] Handle **dividends** — the dividend rate matches Die 3 (5%, 10%, or 20% of the stock's current price per share held); dividends only take effect when the `GameStock` price is $1.00 or higher (rolls below $1.00 have no effect)
 - [ ] Enforce the classic turn sequence: roll dice -> market moves -> active player may buy/sell -> end turn
 - [ ] Only allow `BuyShares` / `SellShares` mutations from the active player after they have rolled
@@ -118,7 +130,8 @@ Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Indu
 ### 10. Build the game UI
 
 - [ ] Create a game lobby powered by GraphQL queries (`games`, `game`)
-- [ ] Display available and active games (show remaining time for in-progress games)
+- [ ] Display available and active games (show remaining time for in-progress games, player count for waiting games)
+- [ ] Add a "Start Game" button visible only to the host (calls `StartGame` mutation) that transitions from the lobby to the game board
 - [ ] Build the main game board showing all 6 `GameStock` records and their current prices (via GraphQL query)
 - [ ] Display each player's cash balance and holdings
 - [ ] Show player presence indicators (online/offline/dropped) via subscriptions
@@ -132,6 +145,7 @@ Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Indu
 
 ### 11. Add real-time updates with GraphQL subscriptions
 
+- [ ] Define a `GameStarted` subscription to notify players in the lobby that the host has started the game
 - [ ] Define a `GameStockPriceUpdated` subscription to push per-game price changes to all players in that game
 - [ ] Define a `DiceRolled` subscription to broadcast roll results in real time
 - [ ] Define a `LeaderboardUpdated` subscription to push net worth changes

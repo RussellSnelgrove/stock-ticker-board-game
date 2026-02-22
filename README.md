@@ -24,10 +24,10 @@ Stock Ticker is a classic board game where players compete to build the highest 
 | Die 3 | Amount of change        | $0.05, $0.10 or $0.20                       |
 
 - **Stock Splits** — When a stock reaches $2.00, all holders' shares double and the price resets to $1.00.
-- **Worthless Stocks** — When a stock drops to $0, all shares are wiped out.
+- **Worthless Stocks** — When a stock drops to $0, all holders' shares are immediately removed and the stock resets to $1.00.
 - **Dividends** — When a dividend is rolled for a stock priced at $1.00 or higher, all holders receive a payout per share based on Die 3 (5%, 10%, or 20% of the stock's current price). Dividends rolled for stocks below $1.00 have no effect.
 
-When creating a game, the host selects a play duration (e.g., 30, 60, or 90 minutes). A game clock counts down in real time. When the timer reaches zero, all trading is frozen and the player with the highest net worth (cash + portfolio value) wins.
+When creating a game, the host selects a play duration (e.g., 30, 60, or 90 minutes). Players join via an invite code while the game is in the lobby. Once the host starts the game, the clock begins counting down. Turn order follows join order. When the timer reaches zero, all trading is frozen and the player with the highest net worth (cash + portfolio value) wins.
 
 ## Features
 
