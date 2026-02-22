@@ -36,6 +36,7 @@ Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Indu
 
 ### 4. Build the Stock Ticker data models
 
+- [ ] Create a `User` model via Devise (email, password, display name) for authentication and player identity
 - [ ] Create a `Stock` model as a static lookup for the 6 commodities (Gold, Silver, Bonds, Grain, Industrial, Oil)
 - [ ] Create a `GameStock` model (belongs to `Game` and `Stock`) to track each stock's price and status within a game
   - Fields: `current_price` (range $0.00–$2.00), `status` (active/worthless)
@@ -54,15 +55,14 @@ Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Indu
 ### 5. Implement game lifecycle
 
 - [ ] Define a `CreateGame` mutation to start a new game (accepts a `duration` in minutes, generates an invite code, initializes 6 `GameStock` records at $1.00, computes `ends_at` from the selected duration)
-- [ ] Define a `JoinGame` mutation to join via invite code
+- [ ] Define a `JoinGame` mutation to join via invite code (if the player was previously in the game, restore their state; otherwise create a new `Player` record)
 - [ ] Define a `LeaveGame` mutation to drop out while preserving state
-- [ ] Define a `RejoinGame` mutation to rejoin a previously left game
 - [ ] Add a `games` query to list available and active games
 - [ ] Add a `game` query to fetch a single game by ID or invite code (includes `ends_at` and remaining time)
 - [ ] Implement game clock expiry — schedule a background job (Active Job) that fires at `ends_at` to freeze all trading, compute final net worth for all players, and set game status to "completed"
 - [ ] Broadcast a `GameEnded` event when the timer expires with final rankings
 - [ ] Support **solo games** — a single player can create and play alone
-- [ ] Allow solo players to **pause and resume** a game later via a `PauseGame` mutation (stores `remaining_time` and stops the clock; `RejoinGame` resumes the clock and recomputes `ends_at`)
+- [ ] Allow solo players to **pause and resume** a game later via a `PauseGame` mutation (stores `remaining_time` and stops the clock; `JoinGame` resumes the clock and recomputes `ends_at`)
 - [ ] Allow players to **join an ongoing game** mid-progress
 - [ ] Track player presence (online/offline) within a game
 - [ ] Write unit tests for game lifecycle mutations, game clock expiry, and queries
@@ -75,20 +75,23 @@ Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Indu
   - **Die 3**: Amount ($0.05, $0.10 or $0.20 movement)
 - [ ] Define a `RollDice` mutation that invokes the dice service and returns the roll result
 - [ ] Apply price changes to the affected `GameStock` after each roll
-- [ ] Handle **stock splits** — when a `GameStock` reaches $2.00, all holders' shares double and price resets
+- [ ] Handle **stock splits** — when a `GameStock` reaches $2.00, all holders' shares double and the price resets to $1.00
 - [ ] Handle **worthless stocks** — when a `GameStock` drops to $0, all shares are wiped out
-- [ ] Handle **dividends** — pay out a percentage of the stock's current value to all holders; dividends only take effect when the `GameStock` price is $1.00 or higher (rolls below $1.00 have no effect)
-- [ ] Enforce turn order so players roll and trade in sequence
+- [ ] Handle **dividends** — the dividend rate matches Die 3 (5%, 10%, or 20% of the stock's current price per share held); dividends only take effect when the `GameStock` price is $1.00 or higher (rolls below $1.00 have no effect)
+- [ ] Enforce the classic turn sequence: roll dice -> market moves -> active player may buy/sell -> end turn
+- [ ] Only allow `BuyShares` / `SellShares` mutations from the active player after they have rolled
+- [ ] Define an `EndTurn` mutation that advances play to the next player
 - [ ] Skip turns for players who have dropped out
-- [ ] Write unit tests for the `RollDice` mutation, price changes, splits, worthless stocks, and dividends
+- [ ] Write unit tests for the `RollDice` mutation, turn sequence enforcement, price changes, splits, worthless stocks, and dividends
 
 ### 7. Implement buying and selling
 
-- [ ] Define a `BuyShares` mutation to purchase shares at the `GameStock`'s current price
-- [ ] Define a `SellShares` mutation to sell shares at the `GameStock`'s current price
+- [ ] Define a `BuyShares` mutation to purchase shares at the `GameStock`'s current price (only allowed for the active player after rolling)
+- [ ] Define a `SellShares` mutation to sell shares at the `GameStock`'s current price (only allowed for the active player after rolling)
 - [ ] Validate sufficient cash for purchases (return GraphQL user errors on failure)
 - [ ] Validate sufficient shares for sales (return GraphQL user errors on failure)
-- [ ] Shares are bought/sold in lots (e.g., multiples of 100)
+- [ ] Shares are bought/sold in lots of 500 shares
+- [ ] A player may make multiple buy/sell transactions before ending their turn
 - [ ] Update player cash and holdings after each transaction
 - [ ] Log all transactions for game history
 - [ ] Add a `transactions` query to fetch game history with pagination
