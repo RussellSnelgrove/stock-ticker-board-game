@@ -6,14 +6,25 @@ A digital version of the classic Stock Ticker board game, built with Ruby on Rai
 
 Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Industrial, and Oil**. Each game maintains its own stock prices, starting at $1.00. Each turn, dice rolls determine which stock moves, the direction (Up, Down, or Dividend), and the amount. Stock prices range from $0.00 to $2.00. Stocks split at $2.00; stocks that drop to $0 are wiped and reset to $1.00. Dividends are only paid when the stock is priced at $1.00 or higher. Each game runs on a countdown timer selected by the host. When the clock reaches zero, the player with the highest net worth wins.
 
+## Constraints
+
+- The app MUST be runnable via `docker-compose up` as the primary development method, using Colima as the container runtime (`brew install colima docker docker-compose`). Do NOT assume services are installed locally.
+- All services (Yugabyte, Redis) MUST be containerized in `docker-compose.yml`. The database MUST use the official `yugabytedb/yugabyte` Docker image — PostgreSQL is only acceptable as a non-Docker local fallback, never inside the Docker stack.
+- Every task that adds infrastructure (database, cache, background jobs) MUST also update `docker-compose.yml` and verify the app works in Docker.
+- All tasks MUST be completed. Do not skip tasks or defer them to "later."
+
 ## Tasks
 
-### 1. Create a basic Ruby on Rails app
+### 1. Dockerize the app and scaffold Rails
 
-- [ ] Install Ruby and Rails
-- [ ] Scaffold a new Rails project (`rails new stock-ticker`)
-- [ ] Set up the database (Yugabyte)
-- [ ] Verify the app runs locally (`rails server`)
+- [ ] Install Colima, Docker CLI, and Docker Compose via Homebrew (`brew install colima docker docker-compose`)
+- [ ] Write a `Dockerfile.dev` for the Rails development environment
+- [ ] Create a `docker-compose.yml` with app, Yugabyte (using the official `yugabytedb/yugabyte` image), and Redis services
+- [ ] Configure environment variables so the app reads `DATABASE_URL` and `REDIS_URL` from the Docker environment
+- [ ] Scaffold a new Rails project (`rails new stock-ticker --database=postgresql`) inside the Docker container
+- [ ] Verify the app runs via `docker-compose up` and is accessible at `http://localhost:3000`
+- [ ] Configure `database.yml` and `cable.yml` to use environment variables (Docker passes them in; local dev falls back to defaults)
+- [ ] Create a `bin/docker-setup` script that runs `db:create db:migrate db:seed`
 - [ ] Set up a Git repository and make an initial commit
 
 ### 2. Set up GraphQL
@@ -36,7 +47,7 @@ Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Indu
 
 ### 4. Build the Stock Ticker data models
 
-- [ ] Create a `User` model via Devise (email, password, display name) for authentication and player identity
+- [ ] Create a `User` model with just a `display_name` field (no authentication — users pick a name and play)
 - [ ] Create a `Stock` model as a static lookup for the 6 commodities (Gold, Silver, Bonds, Grain, Industrial, Oil)
 - [ ] Create a `GameStock` model (belongs to `Game` and `Stock`) to track each stock's price and status within a game
   - Fields: `current_price` (range $0.00–$2.00)
@@ -165,26 +176,7 @@ Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Indu
 - [ ] Display active players in the chat
 - [ ] Write tests for the mutation, subscription, and message delivery
 
-### 13. Add authentication and external access
-
-- [ ] Add user authentication (Devise or a custom solution)
-- [ ] Add a `context` hash to `GraphqlController` that resolves the current user from the session/token
-- [ ] Guard mutations and queries with authentication checks via GraphQL authorization
-- [ ] Implement password-protected access for external users
-- [ ] Set up HTTPS / SSL for secure connections
-- [ ] Configure the app for external network access (port forwarding, domain, or tunneling)
-- [ ] Add role-based access control (admin/host vs. player) enforced at the GraphQL layer
-- [ ] Write tests for authentication and authorization in GraphQL context
-
-### 14. Dockerize the app
-
-- [ ] Write a `Dockerfile` for the Rails app
-- [ ] Create a `docker-compose.yml` with app, Yugabyte, and Redis services
-- [ ] Configure environment variables via `.env` file
-- [ ] Test building and running the app in Docker
-- [ ] Document Docker setup instructions in this README
-
-### 15. Write the game rules document
+### 13. Write the game rules document
 
 - [ ] Create a `RULES.md` file with full game rules and how to play
 - [ ] Include commodity descriptions and starting prices

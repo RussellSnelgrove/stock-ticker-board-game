@@ -1,0 +1,11 @@
+#!/bin/bash
+set -e
+
+echo "=== Setting up Stock Ticker ==="
+echo "Creating database..."
+bin/rails db:create 2>/dev/null || true
+echo "Running migrations..."
+bin/rails db:migrate
+echo "Seeding data..."
+bin/rails db:seed
+echo "=== Ready! Visit http://localhost:3000 ==="

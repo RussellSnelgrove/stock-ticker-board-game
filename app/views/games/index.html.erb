@@ -1,0 +1,178 @@
+<% if current_user %>
+<div id="app" data-user-id="<%= current_user.id %>" data-user-name="<%= current_user.display_name %>">
+  <!-- Home / Lobby Screen -->
+  <div id="home-screen" class="screen active">
+    <div class="setup-container">
+      <div class="setup-logo">
+        <div class="logo-icon">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <rect x="4" y="28" width="8" height="16" rx="2" fill="#22C55E"/>
+            <rect x="14" y="20" width="8" height="24" rx="2" fill="#3B82F6"/>
+            <rect x="24" y="12" width="8" height="32" rx="2" fill="#F59E0B"/>
+            <rect x="34" y="4" width="8" height="40" rx="2" fill="#EF4444"/>
+            <line x1="2" y1="46" x2="46" y2="46" stroke="#475569" stroke-width="2"/>
+          </svg>
+        </div>
+        <h1>Stock Ticker</h1>
+        <p class="setup-subtitle">Playing as <strong><%= current_user.display_name %></strong></p>
+      </div>
+
+      <div class="lobby-actions">
+        <div class="create-game-form">
+          <h2>Create Game</h2>
+          <input type="text" id="game-name-input" placeholder="Game name" maxlength="30">
+          <div class="duration-select">
+            <label>Duration:</label>
+            <select id="game-duration-select">
+              <option value="15">15 min</option>
+              <option value="30" selected>30 min</option>
+              <option value="60">60 min</option>
+              <option value="90">90 min</option>
+            </select>
+          </div>
+          <button id="create-game-btn" class="btn btn-primary btn-large">Create Game</button>
+        </div>
+
+        <div class="join-game-form">
+          <h2>Join by Code</h2>
+          <div class="join-input-row">
+            <input type="text" id="invite-code-input" placeholder="Enter code" maxlength="6">
+            <button id="join-game-btn" class="btn btn-primary">Join</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-lists">
+        <div class="game-list-section">
+          <h3>Open Games</h3>
+          <div id="open-games-list" class="game-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Waiting Room Screen -->
+  <div id="waiting-screen" class="screen">
+    <div class="setup-container">
+      <h1 id="waiting-game-name">Game Name</h1>
+      <div class="invite-code-display">
+        <span class="invite-code-label">Invite Code:</span>
+        <span id="waiting-invite-code" class="invite-code-value">------</span>
+        <button id="copy-code-btn" class="btn btn-ghost btn-small">Copy</button>
+      </div>
+      <div id="waiting-duration" class="duration-badge">60 min</div>
+      <div id="waiting-players" class="waiting-player-list"></div>
+      <button id="start-game-btn" class="btn btn-primary btn-large" style="display:none;">Start Game</button>
+      <button id="leave-waiting-btn" class="btn btn-ghost">Leave Game</button>
+    </div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" class="screen">
+    <header class="game-header">
+      <div class="header-left">
+        <h1 class="game-title">Stock Ticker</h1>
+        <span id="round-display" class="round-badge">Turn 0</span>
+        <span id="game-clock" class="clock-badge">--:--</span>
+      </div>
+      <div class="header-right">
+        <button id="pause-game-btn" class="btn btn-ghost btn-small" style="display:none;">Pause</button>
+      </div>
+    </header>
+
+    <div id="event-ticker" class="event-ticker">
+      <div id="event-ticker-content" class="event-ticker-content">
+        <span class="event-item">Welcome to Stock Ticker! All stocks start at $1.00.</span>
+      </div>
+    </div>
+
+    <div id="phase-banner" class="phase-banner phase-rolling">
+      <span class="phase-label">Waiting...</span>
+      <span class="phase-detail"></span>
+    </div>
+
+    <div class="game-layout">
+      <div class="game-log">
+        <div class="panel log-panel">
+          <h3 class="panel-title">Game Log</h3>
+          <div id="last-roll" class="last-roll">
+            <div class="last-roll-empty">No rolls yet</div>
+          </div>
+          <div id="net-worth-tracker" class="net-worth-tracker"></div>
+        </div>
+      </div>
+
+      <div class="game-main">
+        <div id="stock-board" class="stock-board"></div>
+        <div id="dice-area" class="dice-area">
+          <div class="dice-container">
+            <div class="die" id="die-stock"><span class="die-label">Stock</span><span class="die-value">?</span></div>
+            <div class="die" id="die-direction"><span class="die-label">Action</span><span class="die-value">?</span></div>
+            <div class="die" id="die-amount"><span class="die-label">Amount</span><span class="die-value">?</span></div>
+          </div>
+          <div id="dice-message" class="dice-message"></div>
+          <button id="roll-btn" class="btn btn-primary btn-large roll-btn" disabled>Roll Dice</button>
+        </div>
+        <div id="trade-actions" class="trade-actions hidden">
+          <button id="end-turn-btn" class="btn btn-primary btn-large">Done Trading</button>
+        </div>
+      </div>
+
+      <div class="game-sidebar">
+        <div id="current-player-panel" class="panel current-player-panel">
+          <div id="current-player-info"></div>
+          <div id="current-player-portfolio"></div>
+        </div>
+        <div class="panel scoreboard-panel">
+          <h3 class="panel-title">Standings</h3>
+          <div id="scoreboard"></div>
+        </div>
+        <div class="panel chat-panel">
+          <h3 class="panel-title">Chat</h3>
+          <div id="chat-messages" class="chat-messages"></div>
+          <div class="chat-input-row">
+            <input type="text" id="chat-input" placeholder="Type a message..." maxlength="200">
+            <button id="chat-send-btn" class="btn btn-small">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Screen -->
+  <div id="results-screen" class="screen">
+    <div class="results-container">
+      <div class="results-trophy">&#127942;</div>
+      <h1>Game Over</h1>
+      <div id="results-list" class="results-list"></div>
+      <button id="back-to-lobby-btn" class="btn btn-primary btn-large">Back to Lobby</button>
+    </div>
+  </div>
+</div>
+
+<% else %>
+<!-- Username Entry Screen -->
+<div class="screen active">
+  <div class="setup-container">
+    <div class="setup-logo">
+      <div class="logo-icon">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+          <rect x="4" y="28" width="8" height="16" rx="2" fill="#22C55E"/>
+          <rect x="14" y="20" width="8" height="24" rx="2" fill="#3B82F6"/>
+          <rect x="24" y="12" width="8" height="32" rx="2" fill="#F59E0B"/>
+          <rect x="34" y="4" width="8" height="40" rx="2" fill="#EF4444"/>
+          <line x1="2" y1="46" x2="46" y2="46" stroke="#475569" stroke-width="2"/>
+        </svg>
+      </div>
+      <h1>Stock Ticker</h1>
+      <p class="setup-subtitle">The Classic Board Game</p>
+    </div>
+
+    <%= form_tag join_path, method: :post, class: "username-form" do %>
+      <h2>Choose a Name</h2>
+      <input type="text" name="display_name" placeholder="Your name" maxlength="20" autofocus required>
+      <button type="submit" class="btn btn-primary btn-large">Play</button>
+    <% end %>
+  </div>
+</div>
+<% end %>

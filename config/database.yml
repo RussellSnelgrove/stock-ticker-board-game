@@ -1,0 +1,19 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+
+development:
+  <<: *default
+  url: <%= ENV.fetch("DATABASE_URL", nil) %>
+  database: stock_ticker_development
+  # Local (non-Docker): connects via Unix socket to local PostgreSQL/Yugabyte
+  # Docker: DATABASE_URL env var overrides and points to the yugabyte container
+
+test:
+  <<: *default
+  database: stock_ticker_test
+
+production:
+  <<: *default
+  url: <%= ENV["DATABASE_URL"] %>
