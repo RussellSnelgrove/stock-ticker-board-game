@@ -101,7 +101,7 @@ For developers who cannot run containers (e.g., Docker/Podman blocked by device 
 
 **Prerequisites**:
 
-- Ruby 3.3.x (via rbenv: `brew install rbenv ruby-build && rbenv install 3.3.7`)
+- Ruby 3.3+ (via rbenv: `brew install rbenv ruby-build && rbenv install 3.3.7`)
 - PostgreSQL (`brew install postgresql@16 && brew services start postgresql@16`)
 - Redis (`brew install redis && brew services start redis`)
 

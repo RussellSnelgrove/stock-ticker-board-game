@@ -21,11 +21,14 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 
 - [ ] Install Colima, Docker CLI, and Docker Compose via Homebrew (`brew install colima docker docker-compose`)
 - [ ] Write a `Dockerfile.dev` for the Rails development environment
-- [ ] Create a `docker-compose.yml` with app, PostgreSQL (Yugabyte in production, PostgreSQL in Docker for local dev compatibility), and Redis services
+- [ ] Create a `docker-compose.yml` with app, PostgreSQL (Yugabyte in production, PostgreSQL in Docker for local dev compatibility), and Redis services. The PostgreSQL health check MUST specify the database name: `pg_isready -U stock_ticker -d stock_ticker_development` (without `-d`, it defaults to a database named after the user which won't exist).
 - [ ] Configure environment variables so the app reads `DATABASE_URL` and `REDIS_URL` from the Docker environment
+- [ ] Install the latest stable version of Rails (`gem install rails`)
 - [ ] Scaffold a new Rails project (`rails new stock-ticker --database=postgresql`) inside the Docker container
 - [ ] Verify the app runs via `docker-compose up` and is accessible at `http://localhost:3000`
 - [ ] Configure `database.yml` and `cable.yml` to use environment variables (Docker passes them in; local dev falls back to defaults)
+- [ ] Create a `.dockerignore` that excludes `.ruby-version`, `tmp/`, `log/`, `node_modules/`, `.git/`
+- [ ] Delete the `.ruby-version` file that Rails generates (it conflicts with chruby/rbenv on the host and is not needed — the Ruby version is pinned in `Dockerfile.dev`)
 - [ ] Create a `bin/docker-setup` script that runs `db:create db:migrate db:seed`
 - [ ] Document local development mode (without Docker) using locally installed Ruby, PostgreSQL, and Redis
 - [ ] Set up a Git repository and make an initial commit
@@ -138,7 +141,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 
 ### 9. Plan and set up the client side
 
-- [ ] Use vanilla JS with `fetch` for GraphQL queries/mutations and importmap for module loading
+- [ ] Use vanilla JS with `fetch` for GraphQL queries/mutations and importmap for module loading. IMPORTANT: importmap requires bare specifiers in imports (`import GameClient from "game_client"`), NOT relative paths (`"./game_client"`). Pin each module in `config/importmap.rb`.
 - [ ] Set up the Action Cable JavaScript client for receiving GraphQL subscriptions
 - [ ] Create a base layout with dark theme (Inter + JetBrains Mono fonts from Google Fonts)
 - [ ] Write a proof-of-concept that fetches data from the `/graphql` endpoint and receives a subscription update in the browser

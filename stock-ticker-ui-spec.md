@@ -352,7 +352,7 @@ The transition from rolling to trading should animate smoothly -- cards grow tal
 
 - `stock-name`: Commodity name in the stock's color.
 - `stock-price`: Current price in large monospace font (JetBrains Mono).
-- `stock-change`: Price change from $1.00 starting price, with percentage. Colored by direction: `.up` (green), `.down` (red), `.flat` (gray). Includes +/- sign.
+- `stock-change`: Price change from the **last time this stock's price changed** (i.e., the previous roll that affected this stock), NOT the overall change from $1.00. Shows dollar amount and percentage. Colored by direction of the last change: `.up` (green), `.down` (red), `.flat` (gray if no change yet). Includes +/- sign. The client must track each stock's previous price to compute this.
 - `stock-sparkline`: Canvas element drawing a mini line chart of price history (last 30 data points). Uses the stock's color. Includes a gradient fill below the line (20% opacity at top, 5% at bottom).
 - `stock-card-trade`: Container for the inline buy/sell controls. Only rendered when the game is in the trading phase. Hidden during rolling.
 
