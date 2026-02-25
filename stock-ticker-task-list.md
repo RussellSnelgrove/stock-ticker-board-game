@@ -4,16 +4,30 @@ A digital version of the classic Stock Ticker board game, built with Ruby on Rai
 
 ## Game Overview
 
-Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Industrial, and Oil**. Each game maintains its own stock prices, starting at $1.00. Each turn, dice rolls determine which stock moves, the direction (Up, Down, or Dividend), and the amount. Stock prices range from $0.00 to $2.00. Stocks split at $2.00; stocks that drop to $0 are wiped and reset to $1.00. Dividends are only paid when the stock is priced at $1.00 or higher. Each game runs on a countdown timer selected by the host. When the clock reaches zero, the player with the highest net worth wins.
+Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, Silver, and Gold**. Each game maintains its own stock prices, starting at $1.00. Each turn, the active player rolls dice **twice**, the market moves after each roll, then the player may buy/sell before ending their turn. Stock prices range from $0.00 to $2.00. Stocks split at $2.00; stocks that drop to $0 are wiped and reset to $1.00. Dividends are only paid when the stock is priced at $1.00 or higher. Each game runs on a countdown timer selected by the host. When the clock reaches zero, the player with the highest net worth wins.
+
+## Constraints
+
+- The app MUST be runnable via `docker-compose up` as the primary development method, using Colima as the container runtime (`brew install colima docker docker-compose`). Do NOT assume services are installed locally.
+- All services (database, Redis) MUST be containerized in `docker-compose.yml`.
+- Every task that adds infrastructure (database, cache, background jobs) MUST also update `docker-compose.yml` and verify the app works in Docker.
+- All tasks MUST be completed. Do not skip tasks or defer them to "later."
+- There is NO authentication. Users pick a display name and play immediately. Do NOT use Devise or any auth library.
+- A local development mode (without Docker) MUST also be supported for developers who cannot run containers.
 
 ## Tasks
 
-### 1. Create a basic Ruby on Rails app
+### 1. Dockerize the app and scaffold Rails
 
-- [ ] Install Ruby and Rails
-- [ ] Scaffold a new Rails project (`rails new stock-ticker`)
-- [ ] Set up the database (Yugabyte)
-- [ ] Verify the app runs locally (`rails server`)
+- [ ] Install Colima, Docker CLI, and Docker Compose via Homebrew (`brew install colima docker docker-compose`)
+- [ ] Write a `Dockerfile.dev` for the Rails development environment
+- [ ] Create a `docker-compose.yml` with app, PostgreSQL (Yugabyte in production, PostgreSQL in Docker for local dev compatibility), and Redis services
+- [ ] Configure environment variables so the app reads `DATABASE_URL` and `REDIS_URL` from the Docker environment
+- [ ] Scaffold a new Rails project (`rails new stock-ticker --database=postgresql`) inside the Docker container
+- [ ] Verify the app runs via `docker-compose up` and is accessible at `http://localhost:3000`
+- [ ] Configure `database.yml` and `cable.yml` to use environment variables (Docker passes them in; local dev falls back to defaults)
+- [ ] Create a `bin/docker-setup` script that runs `db:create db:migrate db:seed`
+- [ ] Document local development mode (without Docker) using locally installed Ruby, PostgreSQL, and Redis
 - [ ] Set up a Git repository and make an initial commit
 
 ### 2. Set up GraphQL
@@ -22,7 +36,7 @@ Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Indu
 - [ ] Run the GraphQL generator (`rails generate graphql:install`)
 - [ ] Configure the `GraphqlController` with a single `/graphql` endpoint
 - [ ] Set up the base `StockTickerSchema` with query, mutation, and subscription root types
-- [ ] Configure Action Cable as the GraphQL subscriptions transport
+- [ ] Configure Action Cable with Redis as the GraphQL subscriptions transport
 - [ ] Add GraphiQL or GraphQL Playground for development (via `graphiql-rails` gem)
 - [ ] Write a smoke test that queries the GraphQL endpoint successfully
 
@@ -36,27 +50,30 @@ Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Indu
 
 ### 4. Build the Stock Ticker data models
 
-- [ ] Create a `User` model via Devise (email, password, display name) for authentication and player identity
-- [ ] Create a `Stock` model as a static lookup for the 6 commodities (Gold, Silver, Bonds, Grain, Industrial, Oil)
-- [ ] Create a `GameStock` model (belongs to `Game` and `Stock`) to track each stock's price and status within a game
-  - Fields: `current_price` (range $0.00–$2.00)
+- [ ] Create a `User` model with just a `display_name` field (no authentication — users pick a name and play immediately)
+- [ ] Create a `Stock` model as a static lookup for the 6 commodities in this exact order: Grain, Industrial, Bonds, Oil, Silver, Gold
+- [ ] Create a `GameStock` model (belongs to `Game` and `Stock`) to track each stock's price within a game
+  - Fields: `current_price` (range $0.00-$2.00)
   - Each game gets its own set of 6 `GameStock` records initialized at $1.00
 - [ ] Create a `Game` model to represent a game session and its state:
   - Fields: `name`, `invite_code`, `host` (belongs to `User`), `status`, `current_turn`, `duration`, `starts_at`, `ends_at`, `remaining_time`
   - Status state machine: `waiting` (lobby, accepting players) -> `in_progress` (clock running) -> `paused` (solo only) -> `completed` (timer expired)
   - Only mutations valid for the current status should be accepted (e.g., no rolling in "waiting", no trading in "completed")
+  - Expose `rolls_remaining_this_turn` as a computed field so the client can sync roll state
 - [ ] Create a `Player` model linked to a User and a Game
   - Fields: `cash` (starting at $5,000), `status` (active/dropped), `turn_position` (integer, set by join order)
 - [ ] Create a `Holding` model to track shares owned per player per `GameStock`
   - Fields: `player_id`, `game_stock_id`, `quantity` (integer, multiples of 500)
-- [ ] Create a `Transaction` model to log all buys, sells, dividends, and splits
+- [ ] Create a `GameTransaction` model to log all buys, sells, dividends, and splits (use `GameTransaction` not `Transaction` to avoid Rails reserved name)
   - Fields: `player_id`, `game_stock_id`, `transaction_type` (buy/sell/dividend/split/worthless_reset), `quantity`, `price_at_time`, `total_amount`, `turn_number`
 - [ ] Create a `DiceRoll` model to record each turn's roll results
   - Fields: `game_id`, `player_id`, `turn_number`, `stock_rolled` (references `Stock`), `direction` (up/down/dividend), `amount` ($0.05/$0.10/$0.20)
+- [ ] Create a `Message` model for in-game chat
+  - Fields: `user_id`, `game_id`, `body` (max 200 chars)
 - [ ] Add validations and associations between all models
 - [ ] Add Sorbet type signatures to all models
-- [ ] Define GraphQL types for each model (`GameStockType`, `GameType`, `PlayerType`, `HoldingType`, `TransactionType`, `DiceRollType`)
-- [ ] Seed the database with the 6 static `Stock` records
+- [ ] Define GraphQL types for each model (`GameStockType`, `GameType`, `PlayerType`, `HoldingType`, `GameTransactionType`, `DiceRollType`, `MessageType`)
+- [ ] Seed the database with the 6 static `Stock` records in order: Grain, Industrial, Bonds, Oil, Silver, Gold
 - [ ] Write unit tests for all model validations and associations
 
 ### 5. Implement game lifecycle
@@ -66,7 +83,7 @@ Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Indu
 - [ ] Define a `JoinGame` mutation to join via invite code (if the player was previously in the game, restore their state; otherwise create a new `Player` record with $5,000 cash and 0 shares)
 - [ ] Define a `LeaveGame` mutation to drop out while preserving state
 - [ ] Add a `games` query to list available and active games
-- [ ] Add a `game` query to fetch a single game by ID or invite code (includes `ends_at` and remaining time)
+- [ ] Add a `game` query to fetch a single game by ID or invite code (includes `ends_at`, remaining time, and `rollsRemainingThisTurn`)
 - [ ] Implement game clock expiry — schedule a background job (Active Job) that fires at `ends_at` to freeze all trading, compute final net worth for all players, and set game status to "completed"
 - [ ] Broadcast a `GameEnded` event when the timer expires with final rankings
 - [ ] Support **solo games** — only 1 player; host creates and starts the game alone
@@ -79,27 +96,28 @@ Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Indu
 
 ### 6. Implement the dice and turn mechanics
 
-- [ ] Build a dice rolling service that produces 3 results per turn (all dice are **uniformly weighted** — each outcome is equally likely):
-  - **Die 1**: Which stock is affected (1/6 each: Gold, Silver, Bonds, Grain, Industrial, Oil)
+- [ ] Build a dice rolling service that produces 3 results per roll (all dice are **uniformly weighted** — each outcome is equally likely):
+  - **Die 1**: Which stock is affected (1/6 each: Grain, Industrial, Bonds, Oil, Silver, Gold)
   - **Die 2**: Direction (1/3 each: Up, Down, or Dividend)
   - **Die 3**: Amount (1/3 each: $0.05, $0.10 or $0.20 movement)
-- [ ] Define a `RollDice` mutation that invokes the dice service and returns the roll result
+- [ ] Each player rolls **twice per turn** before trading (ROLLS_PER_TURN = 2). The `RollDice` mutation tracks rolls per turn and returns `rollsRemaining`.
+- [ ] Define a `RollDice` mutation that invokes the dice service and returns the roll result plus `rollsRemaining`
 - [ ] Apply price changes to the affected `GameStock` after each roll
 - [ ] Share supply is **unlimited** — players may buy as many shares as they can afford
 - [ ] **Price floor**: $0.00 is the absolute minimum; any roll that would take a stock below $0 triggers the worthless behavior (wipe shares, reset to $1.00)
 - [ ] Handle **stock splits** — when a `GameStock` reaches or exceeds $2.00, cap at $2.00, double all holders' shares, and reset the price to $1.00 (no carry-over of excess amount)
 - [ ] Handle **worthless stocks** — when a `GameStock` drops to $0, all holders' shares are immediately removed and the stock resets to $1.00; play continues as normal
 - [ ] Handle **dividends** — the dividend rate matches Die 3 (5%, 10%, or 20% of the stock's current price per share held); dividends only take effect when the `GameStock` price is $1.00 or higher (rolls below $1.00 have no effect)
-- [ ] Enforce the classic turn sequence: roll dice -> market moves -> active player may buy/sell -> end turn
-- [ ] Only allow `BuyShares` / `SellShares` mutations from the active player after they have rolled
-- [ ] Define an `EndTurn` mutation that advances play to the next player
+- [ ] Enforce the classic turn sequence: roll dice twice -> market moves after each roll -> active player may buy/sell -> end turn
+- [ ] Only allow `BuyShares` / `SellShares` mutations from the active player after they have completed both rolls
+- [ ] Define an `EndTurn` mutation that advances play to the next player (requires both rolls completed)
 - [ ] Skip turns for players who have dropped out
 - [ ] Write unit tests for the `RollDice` mutation, turn sequence enforcement, price changes, splits, worthless stocks, and dividends
 
 ### 7. Implement buying and selling
 
-- [ ] Define a `BuyShares` mutation to purchase shares at the `GameStock`'s current price (only allowed for the active player after rolling)
-- [ ] Define a `SellShares` mutation to sell shares at the `GameStock`'s current price (only allowed for the active player after rolling)
+- [ ] Define a `BuyShares` mutation to purchase shares at the `GameStock`'s current price (only allowed for the active player after completing both rolls)
+- [ ] Define a `SellShares` mutation to sell shares at the `GameStock`'s current price (only allowed for the active player after completing both rolls)
 - [ ] Validate sufficient cash for purchases (return GraphQL user errors on failure)
 - [ ] Validate sufficient shares for sales (return GraphQL user errors on failure)
 - [ ] Shares are bought/sold in lots of 500 shares
@@ -113,35 +131,41 @@ Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Indu
 
 - [ ] Configure Redis as the Rails cache store (in addition to its existing role for Action Cable)
 - [ ] Cache active game state (stock prices, player holdings, turn info) in Redis
-- [ ] Implement write-through caching so game state is persisted to Yugabyte on each mutation
+- [ ] Implement write-through caching so game state is persisted to the database on each mutation
 - [ ] Invalidate cache on critical events (game over, player join/leave)
 - [ ] Use caching for the leaderboard and game listings
 - [ ] Write tests to verify cache read/write and persistence
 
 ### 9. Plan and set up the client side
 
-- [ ] Choose a JavaScript approach for the frontend (e.g., Stimulus + Turbo, or a lightweight SPA framework)
-- [ ] Choose a GraphQL client for queries and mutations (e.g., vanilla `fetch`, `graphql-request`, or Apollo)
+- [ ] Use vanilla JS with `fetch` for GraphQL queries/mutations and importmap for module loading
 - [ ] Set up the Action Cable JavaScript client for receiving GraphQL subscriptions
-- [ ] Configure the JS build pipeline (importmap, esbuild, or similar)
-- [ ] Create a base layout and asset structure
+- [ ] Create a base layout with dark theme (Inter + JetBrains Mono fonts from Google Fonts)
 - [ ] Write a proof-of-concept that fetches data from the `/graphql` endpoint and receives a subscription update in the browser
 
 ### 10. Build the game UI
 
+The game screen uses a **three-column layout**: Game Log (left) | Game Board (center) | Sidebar (right).
+
+- [ ] Build a username entry screen (no auth — just a text input and "Play" button that creates a session)
 - [ ] Create a game lobby powered by GraphQL queries (`games`, `game`)
 - [ ] Display available and active games (show remaining time for in-progress games, player count for waiting games)
 - [ ] Add a "Start Game" button visible only to the host (calls `StartGame` mutation) that transitions from the lobby to the game board
-- [ ] Build the main game board showing all 6 `GameStock` records and their current prices (via GraphQL query)
-- [ ] Display each player's cash balance and holdings
+- [ ] Build the main game board showing all 6 `GameStock` records as **static cards in a fixed 1x6 horizontal row** (Grain, Industrial, Bonds, Oil, Silver, Gold — cards are created once and only their content is updated, never reordered or recreated)
+- [ ] Stock cards expand to show inline buy/sell controls during the trading phase
+- [ ] Display each player's cash balance and holdings in the right sidebar
 - [ ] Show player presence indicators (online/offline/dropped) via subscriptions
-- [ ] Add a dice roll animation triggered by the `RollDice` mutation response
-- [ ] Build buy/sell controls that call `BuyShares` / `SellShares` mutations
-- [ ] Show a transaction history / activity feed via the `transactions` query
-- [ ] Build a net worth leaderboard (cash + portfolio value) with live subscription updates
-- [ ] Display a countdown timer on the game board showing remaining play time
+- [ ] Add a dice roll animation (15 ticks at 80ms) triggered by the `RollDice` mutation response; roll button shows "Roll Dice (1 of 2)" then "Roll Dice (2 of 2)"
+- [ ] Build buy/sell controls (quick lot buttons: 1, 5, 10, 25, Max/All) that call `BuyShares` / `SellShares` mutations
+- [ ] Build a **Game Log panel on the left side** showing:
+  - The last dice roll result (three dice values with colored labels)
+  - All players' current net worth ranked, with the change since the last roll (green +$X, red -$X)
+  - A net worth bar for each player proportional to the max
+- [ ] Build a net worth leaderboard in the right sidebar with live subscription updates
+- [ ] Display a countdown timer on the game board showing remaining play time (turns red under 5 min, pulses under 1 min)
 - [ ] Add a pause game button for solo players (calls `PauseGame` mutation)
 - [ ] Add a game-over screen with final rankings (triggered by `GameEnded` subscription)
+- [ ] Show a scrolling event ticker below the header with recent game events
 
 ### 11. Add real-time updates with GraphQL subscriptions
 
@@ -157,38 +181,18 @@ Players buy and sell shares in 6 commodities: **Gold, Silver, Bonds, Grain, Indu
 
 ### 12. Add a real-time chat room
 
-- [ ] Create a `Message` model (user, game, body, timestamp)
 - [ ] Define a `SendMessage` GraphQL mutation to post chat messages
 - [ ] Define a `MessageReceived` GraphQL subscription for real-time message delivery
-- [ ] Build a chat room UI within the game view
+- [ ] Build a chat room UI in the right sidebar within the game view
 - [ ] Build out an emoji functionality so users can use emojis in the chat room
 - [ ] Display active players in the chat
 - [ ] Write tests for the mutation, subscription, and message delivery
 
-### 13. Add authentication and external access
-
-- [ ] Add user authentication (Devise or a custom solution)
-- [ ] Add a `context` hash to `GraphqlController` that resolves the current user from the session/token
-- [ ] Guard mutations and queries with authentication checks via GraphQL authorization
-- [ ] Implement password-protected access for external users
-- [ ] Set up HTTPS / SSL for secure connections
-- [ ] Configure the app for external network access (port forwarding, domain, or tunneling)
-- [ ] Add role-based access control (admin/host vs. player) enforced at the GraphQL layer
-- [ ] Write tests for authentication and authorization in GraphQL context
-
-### 14. Dockerize the app
-
-- [ ] Write a `Dockerfile` for the Rails app
-- [ ] Create a `docker-compose.yml` with app, Yugabyte, and Redis services
-- [ ] Configure environment variables via `.env` file
-- [ ] Test building and running the app in Docker
-- [ ] Document Docker setup instructions in this README
-
-### 15. Write the game rules document
+### 13. Write the game rules document
 
 - [ ] Create a `RULES.md` file with full game rules and how to play
 - [ ] Include commodity descriptions and starting prices
-- [ ] Document dice mechanics (3-die system, outcomes)
+- [ ] Document dice mechanics (3-die system, outcomes, 2 rolls per turn)
 - [ ] Explain stock splits, worthless stocks, and dividends
 - [ ] Cover buying/selling rules and lot sizes
 - [ ] Describe game types (solo vs. multiplayer)

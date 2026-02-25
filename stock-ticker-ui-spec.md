@@ -27,12 +27,12 @@ Dark theme with a financial terminal aesthetic. Dark gray background, bright acc
 
 | Stock      | Symbol | Color   |
 | ---------- | ------ | ------- |
-| Gold       | GOLD   | #F59E0B |
-| Silver     | SLVR   | #94A3B8 |
+| Grain      | GRN    | #D97706 |
+| Industrial | IND    | #EF4444 |
 | Bonds      | BNDS   | #3B82F6 |
 | Oil        | OIL    | #10B981 |
-| Industrial | IND    | #EF4444 |
-| Grain      | GRN    | #D97706 |
+| Silver     | SLVR   | #94A3B8 |
+| Gold       | GOLD   | #F59E0B |
 
 **Player colors** (assigned by join order, cycle if more than 4 players):
 
@@ -144,7 +144,9 @@ From the prototype. Used for local games. In the multiplayer version this screen
 
 ### Screen 4: Game Screen (the main gameplay screen)
 
-The core of the UI. Uses a two-column layout: main content area (left/center) and sidebar (right).
+The core of the UI. Uses a **three-column layout**: Game Log (left, 260px) | Game Board (center, flexible) | Sidebar (right, 300px).
+
+**Turn flow**: Roll 1 of 2 → Roll 2 of 2 → Trading phase (cards expand) → Done Trading → next player.
 
 **Top-level structure**:
 
@@ -154,24 +156,80 @@ The core of the UI. Uses a two-column layout: main content area (left/center) an
   <div id="event-ticker" class="event-ticker">...</div>
   <div id="phase-banner" class="phase-banner">...</div>
   <div class="game-layout">
+    <div class="game-log">
+      <div class="panel log-panel">
+        <h3 class="panel-title">Game Log</h3>
+        <div id="last-roll">...</div>
+        <div id="net-worth-tracker">...</div>
+      </div>
+    </div>
     <div class="game-main">
       <div id="stock-board" class="stock-board">...</div>
       <div id="dice-area" class="dice-area">...</div>
-      <!-- No separate trade section — buy/sell controls appear on stock cards during trading phase -->
       <div id="trade-actions" class="trade-actions hidden">
         <button id="end-turn-btn" class="btn btn-primary btn-large">Done Trading</button>
       </div>
     </div>
     <div class="game-sidebar">
-      <div id="current-player-panel" class="panel current-player-panel">
-        ...
-      </div>
+      <div id="current-player-panel" class="panel current-player-panel">...</div>
       <div class="panel scoreboard-panel">...</div>
-      <!-- NEW: chat panel for multiplayer -->
+      <div class="panel chat-panel">...</div>
     </div>
   </div>
 </div>
 ```
+
+```css
+.game-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr 300px;
+  gap: 0;
+  min-height: calc(100vh - 140px);
+}
+```
+
+#### Game Log (left sidebar)
+
+Displays the last dice roll result and all players' net worth with changes since the last roll.
+
+```html
+<div class="game-log">
+  <div class="panel log-panel">
+    <h3 class="panel-title">Game Log</h3>
+    <div id="last-roll">
+      <div class="last-roll-result">
+        <div class="last-roll-dice">
+          <span class="last-roll-die" style="border-color:#F59E0B;color:#F59E0B">GOLD</span>
+          <span class="last-roll-die die-up">UP</span>
+          <span class="last-roll-die">10¢</span>
+        </div>
+        <div class="last-roll-message up">Gold rises $0.10 to $1.10</div>
+      </div>
+    </div>
+    <div id="net-worth-tracker">
+      <div class="nw-entry">
+        <span class="nw-name" style="color:#3B82F6">Russell</span>
+        <span class="nw-values">
+          <span class="nw-current">$5,200</span>
+          <span class="nw-change positive">+$200</span>
+        </span>
+      </div>
+      <div class="nw-bar" style="width:100%;background:#3B82F6"></div>
+      <!-- more players... -->
+    </div>
+  </div>
+</div>
+```
+
+**Last roll section**: Shows the three dice values as small colored badges (stock symbol in its commodity color, direction colored green/red/amber, amount in neutral). Below the dice, a message describes the outcome (colored by event type: up, down, crash, split, dividend).
+
+**Net worth tracker**: All players ranked by net worth descending. Each entry shows:
+- Player name (in their player color if it's you)
+- Current net worth in monospace
+- Change since last roll: green `+$X` for gains, red `-$X` for losses, gray dash if unchanged
+- A colored bar below proportional to max net worth
+
+The client snapshots all players' net worth before each roll, then shows the diff after.
 
 #### Game Header
 
@@ -227,14 +285,14 @@ A full-width colored bar indicating the current game phase and active player.
 </div>
 ```
 
-- `phase-rolling`: Background tint indicating rolling phase.
-- `phase-trading`: Different background tint for trading phase.
+- `phase-rolling`: Background tint indicating rolling phase. Shows "Roll 1 of 2" or "Roll 2 of 2".
+- `phase-trading`: Different background tint for trading phase. Shows "Buy & Sell".
 - Player name is rendered in their assigned player color.
 - In multiplayer, when it's NOT your turn, the banner should indicate whose turn it is and what they're doing.
 
 #### Stock Board
 
-A 1x6 horizontal row of stock cards, one per commodity. The board spans the full width of the main content area, with all 6 cards in a single row.
+A 1x6 horizontal row of **static** stock cards, one per commodity in fixed order: Grain, Industrial, Bonds, Oil, Silver, Gold. Cards are created once when entering the game and their DOM positions never change — only the text content (price, change) is updated in place. This prevents cards from jumping or reordering on re-render.
 
 ```css
 .stock-board {
@@ -363,6 +421,8 @@ Visible during the rolling phase. Hidden during trading phase.
    - Direction die: Shows "UP ▲", "DOWN ▼", or "DIV ★". Gets a `result-up`, `result-down`, or `result-dividend` class for coloring.
    - Amount die: Shows the cent value (e.g., "10¢").
 5. Dice message appears below with a description of what happened, colored by event type.
+
+**Two rolls per turn**: The roll button shows "Roll Dice (1 of 2)" on the first roll and "Roll Dice (2 of 2)" on the second. After the second roll, the dice area hides and the trading phase begins (stock cards expand to show buy/sell controls). The `rollsRemaining` counter is synced from the server via the `rollsRemainingThisTurn` field on the game object to prevent client/server desync.
 
 **Multiplayer behavior**: When it's not your turn, the dice area shows a read-only view. The `RollDice` button is hidden or disabled. Dice results from the active player are pushed via the `DiceRolled` subscription and the animation plays for all players.
 
@@ -533,22 +593,25 @@ Floating notification that appears briefly for important events (splits, crashes
 
 ### Phase Toggling
 
-The dice area and stock card trade controls swap visibility based on the current phase:
+The turn has two phases with two rolls in the first:
 
-- **Rolling phase**: `dice-area` visible below the stock board. Stock cards show market data only (no trade controls). `trade-actions` has `.hidden` class.
-- **Trading phase**: `dice-area` has `.hidden` class. Each stock card gains the `.trading` class and expands to reveal inline buy/sell controls (`.stock-card-trade`). `trade-actions` is visible, showing the "Done Trading" button below the board.
+- **Rolling phase (roll 1 of 2)**: `dice-area` visible. Roll button says "Roll Dice (1 of 2)". Stock cards show market data only.
+- **Rolling phase (roll 2 of 2)**: Same as above but button says "Roll Dice (2 of 2)". After this roll completes, the phase switches automatically.
+- **Trading phase**: `dice-area` has `.hidden` class. Each stock card gains the `.trading` class and expands to reveal inline buy/sell controls. `trade-actions` shows "Done Trading" button.
 
 ### Render Cycle
 
 The `render()` function re-renders all dynamic components on every state change. Components:
 
-1. `renderStockBoard()` -- 6 stock cards in a 1x6 row with prices, changes, sparklines. During trading phase, cards expand to include inline buy/sell controls.
-2. `renderPhaseBanner()` -- Phase name, active player, progress.
-3. `renderDiceArea()` -- Show dice below stock board during rolling phase; hide during trading.
-4. `renderPlayerPanel()` -- Active player's cash, net worth, portfolio.
-5. `renderScoreboard()` -- All players ranked by net worth.
-6. `renderEventTicker()` -- Scrolling event feed.
-7. `renderRoundDisplay()` -- Round number badge.
+1. `initStockBoard()` -- Creates 6 static stock card DOM elements once (fixed order: Grain, Industrial, Bonds, Oil, Silver, Gold).
+2. `renderStockBoard()` -- Updates price and change text inside existing cards. During trading phase, injects inline buy/sell controls. Never recreates or reorders cards.
+3. `renderPhaseBanner()` -- Phase name, active player, roll progress (e.g., "Roll 1 of 2").
+4. `renderDiceArea()` -- Show dice and roll button during rolling phase; hide during trading.
+5. `renderPlayerPanel()` -- Your cash, net worth, portfolio.
+6. `renderScoreboard()` -- All players ranked by net worth.
+7. `renderEventTicker()` -- Scrolling event feed.
+8. `renderRoundDisplay()` -- Turn number badge.
+9. `renderGameLog()` -- Left sidebar: last roll result (dice values + message) and all players' net worth with changes since last roll.
 
 In the multiplayer version, most of these will re-render in response to GraphQL subscription events rather than local state changes.
 
@@ -562,11 +625,11 @@ In the multiplayer version, most of these will re-render in response to GraphQL 
 
 ## Responsive Considerations
 
-The game screen uses a two-column layout (`game-main` + `game-sidebar`). The stock board is a 1x6 horizontal grid that spans the full main content width.
+The game screen uses a three-column layout: Game Log (260px) | Game Board (flexible) | Sidebar (300px). The stock board is a 1x6 horizontal grid of static cards.
 
-- **Desktop (1200px+)**: Two-column layout. 1x6 stock card row. Chat panel in sidebar below scoreboard. Cards have room for market data + inline trade controls.
-- **Tablet (768-1199px)**: Sidebar collapses below the main content. Stock board becomes a 3x2 grid to fit the narrower width while keeping cards readable. Portfolio, scoreboard, and chat stack vertically.
-- **Mobile (<768px)**: Single column. Stock board becomes a 2x3 grid or a vertical scrolling 1-column stack. Chat in a slide-out drawer (toggle button in header). Trade controls still appear inline on cards during trading phase.
+- **Desktop (1200px+)**: Three-column layout. 1x6 stock card row. Game log on left, chat in sidebar on right. Cards have room for market data + inline trade controls.
+- **Tablet (768-1199px)**: Collapses to single column. Game log moves above the board. Sidebar stacks below. Stock board becomes a 3x2 grid.
+- **Mobile (<768px)**: Single column. Stock board becomes a 2x3 grid. Chat in a slide-out drawer. Game log stacks above board.
 
 ---
 
@@ -574,7 +637,11 @@ The game screen uses a two-column layout (`game-main` + `game-sidebar`). The sto
 
 Full list of CSS classes used across all components, for creating `style.css`:
 
-**Layout**: `screen`, `active`, `hidden`, `setup-container`, `game-layout`, `game-main`, `game-sidebar`, `panel`, `results-container`
+**Layout**: `screen`, `active`, `hidden`, `setup-container`, `game-layout`, `game-log`, `game-main`, `game-sidebar`, `panel`, `results-container`
+
+**Username form**: `username-form`
+
+**Game log** (left sidebar): `log-panel`, `last-roll`, `last-roll-empty`, `last-roll-result`, `last-roll-dice`, `last-roll-die`, `die-up`, `die-down`, `die-dividend`, `last-roll-message`, `net-worth-tracker`, `nw-entry`, `nw-name`, `nw-values`, `nw-current`, `nw-change`, `nw-change.positive`, `.negative`, `.neutral`, `nw-bar`
 
 **Setup**: `setup-logo`, `logo-icon`, `setup-subtitle`, `setup-players`, `player-input-row`, `player-number`, `player-color-1` through `player-color-4`
 
@@ -584,7 +651,7 @@ Full list of CSS classes used across all components, for creating `style.css`:
 
 **Phase banner**: `phase-banner`, `phase-rolling`, `phase-trading`, `phase-label`, `phase-detail`, `phase-player`
 
-**Stock board**: `stock-board`, `stock-card`, `stock-card.trading`, `stock-name`, `stock-price`, `stock-change`, `stock-change.up`, `.down`, `.flat`, `stock-sparkline`, `stock-card-trade`, `flash-up`, `flash-down`, `flash-dividend`
+**Stock board**: `stock-board`, `stock-card`, `stock-card.trading`, `stock-name`, `stock-price`, `stock-change`, `stock-change.up`, `.down`, `.flat`, `stock-card-trade-slot`, `stock-card-trade`, `flash-up`, `flash-down`, `flash-dividend`
 
 **Dice**: `dice-area`, `dice-container`, `die`, `die-label`, `die-value`, `rolling`, `result-up`, `result-down`, `result-dividend`, `dice-message`, `dice-message.up`, `.down`, `.dividend`, `.split`, `.crash`, `roll-btn`
 
