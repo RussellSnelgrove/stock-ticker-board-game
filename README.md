@@ -45,14 +45,14 @@ When creating a game, the host selects a play duration (e.g., 30, 60, or 90 minu
 
 ## Tech Stack
 
-| Component        | Technology                                     |
-| ---------------- | ---------------------------------------------- |
-| Framework        | Ruby on Rails                                  |
-| API              | GraphQL (graphql-ruby)                         |
-| Database         | PostgreSQL (Yugabyte-compatible for production) |
-| Caching/Real-time| Redis (caching + Action Cable + GraphQL Subscriptions) |
-| Identity         | Session-based (pick a username, no login required) |
-| Containerization | Colima + Docker CLI + Docker Compose           |
+| Component         | Technology                                             |
+| ----------------- | ------------------------------------------------------ |
+| Framework         | Ruby on Rails                                          |
+| API               | GraphQL (graphql-ruby)                                 |
+| Database          | PostgreSQL (Yugabyte-compatible for production)        |
+| Caching/Real-time | Redis (caching + Action Cable + GraphQL Subscriptions) |
+| Identity          | Session-based (pick a username, no login required)     |
+| Containerization  | Colima + Docker CLI + Docker Compose                   |
 
 ## Getting Started
 
@@ -160,7 +160,7 @@ stock-ticker/
 
 ## Contributing
 
-1. Fork the repository
+1. Clone the repository
 2. Create a feature branch (`git checkout -b feature/my-feature`)
 3. Commit your changes (`git commit -m "Add my feature"`)
 4. Push to the branch (`git push origin feature/my-feature`)
