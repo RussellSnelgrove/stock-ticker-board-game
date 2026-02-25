@@ -139,36 +139,247 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [ ] Use caching for the leaderboard and game listings
 - [ ] Write tests to verify cache read/write and persistence
 
-### 9. Plan and set up the client side
+### 9. Set up the client-side design system
+
+#### 9a. Tooling
 
 - [ ] Use vanilla JS with `fetch` for GraphQL queries/mutations and importmap for module loading. IMPORTANT: importmap requires bare specifiers in imports (`import GameClient from "game_client"`), NOT relative paths (`"./game_client"`). Pin each module in `config/importmap.rb`.
 - [ ] Set up the Action Cable JavaScript client for receiving GraphQL subscriptions
-- [ ] Create a base layout with dark theme (Inter + JetBrains Mono fonts from Google Fonts)
 - [ ] Write a proof-of-concept that fetches data from the `/graphql` endpoint and receives a subscription update in the browser
+
+#### 9b. Theme and design language
+
+Dark theme with a financial terminal aesthetic. Dark gray background (`#0F172A`), bright accent colors, high-contrast text (`#E2E8F0`).
+
+- [ ] Load fonts from Google Fonts in the layout `<head>`:
+  - **Primary**: Inter (weights: 400, 500, 600, 700, 800, 900) — all UI text
+  - **Monospace**: JetBrains Mono (weights: 400, 500, 600, 700) — prices, numbers, dice values
+
+```html
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+```
+
+#### 9c. Color palette
+
+- [ ] Implement stock colors as constants (each commodity has a fixed color throughout):
+
+| Stock      | Symbol | Color   |
+| ---------- | ------ | ------- |
+| Grain      | GRN    | #D97706 |
+| Industrial | IND    | #EF4444 |
+| Bonds      | BNDS   | #3B82F6 |
+| Oil        | OIL    | #10B981 |
+| Silver     | SLVR   | #94A3B8 |
+| Gold       | GOLD   | #F59E0B |
+
+- [ ] Implement player colors (assigned by join order, cycle if more than 4):
+
+| Position | Color   |
+| -------- | ------- |
+| 1        | #3B82F6 |
+| 2        | #EF4444 |
+| 3        | #22C55E |
+| 4        | #F59E0B |
+
+- [ ] Implement semantic colors:
+  - Up/gain: `#22C55E` | Down/loss: `#EF4444` | Dividend: `#F59E0B` | Split: `#3B82F6` | Crash: `#EF4444` (brighter flash)
+  - Buy buttons: green tint | Sell buttons: red tint
+
+#### 9d. Button styles
+
+- [ ] Create button CSS classes:
+  - `btn-primary`: Main CTA (Roll Dice, Start Game, Done Trading). Bold, filled background.
+  - `btn-danger`: Destructive action (End Game). Red accent.
+  - `btn-ghost`: Secondary action (Add Player, Leave Game). Transparent with border.
+  - `btn-small`: Compact variant for header actions.
+  - `btn-large`: Full-width variant for primary screen actions.
+  - `quick-btn`: Small inline pill-shaped buttons for trading. Subtypes: `quick-buy` (green tint), `quick-sell` (red tint), `quick-max` (italic).
+
+#### 9e. Number formatting
+
+- [ ] Implement consistent formatting helpers:
+  - **Prices** (stock prices, amounts): `$X.XX`, always 2 decimal places. Stored as integer cents. Display via `(cents / 100).toFixed(2)`.
+  - **Money** (cash, net worth, costs): `$X,XXX` with thousand separators, no decimals. Use `toLocaleString('en-US')`.
+  - **Shares**: Thousand separators (e.g., "1,500 shares").
 
 ### 10. Build the game UI
 
-The game screen uses a **three-column layout**: Game Log (left) | Game Board (center) | Sidebar (right).
+The app uses a screen-switching pattern. Only one `.screen` is visible at a time (toggled via the `.active` class). There are 5 screens.
 
-- [ ] Build a username entry screen (no auth — just a text input and "Play" button that creates a session)
-- [ ] Create a game lobby powered by GraphQL queries (`games`, `game`)
-- [ ] Display available and active games (show remaining time for in-progress games, player count for waiting games)
-- [ ] Add a "Start Game" button visible only to the host (calls `StartGame` mutation) that transitions from the lobby to the game board
-- [ ] Build the main game board showing all 6 `GameStock` records as **static cards in a fixed 1x6 horizontal row** (Grain, Industrial, Bonds, Oil, Silver, Gold — cards are created once and only their content is updated, never reordered or recreated)
-- [ ] Stock cards expand to show inline buy/sell controls during the trading phase
-- [ ] Display each player's cash balance and holdings in the right sidebar
-- [ ] Show player presence indicators (online/offline/dropped) via subscriptions
-- [ ] Add a dice roll animation (15 ticks at 80ms) triggered by the `RollDice` mutation response; roll button shows "Roll Dice (1 of 2)" then "Roll Dice (2 of 2)"
-- [ ] Build buy/sell controls (quick lot buttons: 1, 5, 10, 25, Max/All) that call `BuyShares` / `SellShares` mutations
-- [ ] Build a **Game Log panel on the left side** showing:
-  - The last dice roll result (three dice values with colored labels)
-  - All players' current net worth ranked, with the change since the last roll (green +$X, red -$X)
-  - A net worth bar for each player proportional to the max
-- [ ] Build a net worth leaderboard in the right sidebar with live subscription updates
-- [ ] Display a countdown timer on the game board showing remaining play time (turns red under 5 min, pulses under 1 min)
-- [ ] Add a pause game button for solo players (calls `PauseGame` mutation)
-- [ ] Add a game-over screen with final rankings (triggered by `GameEnded` subscription)
-- [ ] Show a scrolling event ticker below the header with recent game events
+#### 10a. Screen: Username Entry
+
+No authentication — users pick a name and play immediately.
+
+- [ ] Centered card layout with the app logo (SVG bar chart: 4 colored bars — green, blue, amber, red)
+- [ ] Title "Stock Ticker" with gradient text (`linear-gradient(135deg, #F59E0B, #EF4444)`)
+- [ ] Single text input for display name (placeholder: "Your name", maxlength: 20, autofocus)
+- [ ] "Play" button submits a POST to `/join` which creates/finds a `User` and stores `user_id` in the Rails session
+- [ ] On success, redirects to the lobby (home screen)
+- [ ] CSS class: `username-form`
+
+#### 10b. Screen: Home / Game Lobby
+
+Shown after entering a username. Centered card layout.
+
+- [ ] App logo and title (reuse from username screen)
+- [ ] Subtitle: "Playing as **[display_name]**"
+- [ ] **Create Game form**: game name input (maxlength: 30), duration select (15/30/60/90 min), "Create Game" button. Calls `CreateGame` mutation.
+- [ ] **Join by Code form**: text input (maxlength: 6, uppercase monospace, letter-spacing), "Join" button. Calls `JoinGame` mutation.
+- [ ] **Open Games list**: rows showing game name, player count, duration, host name, and a "Join" button. Populated via `games` GraphQL query.
+- [ ] If no open games: "No open games yet. Create one!" message.
+- [ ] CSS classes: `setup-container`, `lobby-actions`, `create-game-form`, `join-game-form`, `game-list-section`, `game-list`, `game-list-item`, `game-list-empty`
+
+#### 10c. Screen: Waiting Room
+
+Shown after creating or joining a game in "waiting" status. Centered card layout.
+
+- [ ] Game name as heading
+- [ ] Invite code displayed prominently (large monospace text `invite-code-value`, with "Copy" button using `navigator.clipboard.writeText`)
+- [ ] Duration badge (e.g., "60 min")
+- [ ] Player list in join order: numbered 1, 2, 3... with a colored dot using their player color. Host labeled "(host)".
+- [ ] "Start Game" button: only visible to the host, large primary button. Calls `StartGame` mutation.
+- [ ] "Leave Game" button for non-host players. Calls `LeaveGame` mutation.
+- [ ] Subscribe to `PlayerPresenceChanged` to update the player list in real time.
+- [ ] On `GameStarted` subscription event, transition all clients to the game screen.
+- [ ] CSS classes: `invite-code-display`, `invite-code-label`, `invite-code-value`, `duration-badge`, `waiting-player-list`, `waiting-player-item`, `waiting-player-dot`, `waiting-player-number`, `waiting-player-name`, `waiting-player-host`
+
+#### 10d. Screen: Game Board
+
+The core gameplay screen. Uses a **three-column layout**: Game Log (left, 260px) | Game Board (center, flexible) | Sidebar (right, 300px).
+
+```css
+.game-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr 300px;
+  gap: 0;
+  min-height: calc(100vh - 140px);
+}
+```
+
+**Turn flow**: Roll 1 of 2 → Roll 2 of 2 → Trading phase (cards expand) → Done Trading → next player.
+
+##### Game Header
+
+- [ ] Top bar with: game title (gradient text), turn number badge (`round-badge`), countdown timer (`clock-badge`), pause button (solo only)
+- [ ] Clock turns red (`warning` class) under 5 min, pulses (`critical` class + CSS `pulse` animation) under 1 min
+- [ ] Update clock every second from `game.endsAt`
+
+##### Event Ticker
+
+- [ ] Horizontally scrolling marquee strip below the header
+- [ ] Event items colored by type: `.up` (green), `.down` (red), `.dividend` (amber), `.split` (blue), `.crash` (red bold), `.trade` (neutral)
+- [ ] Content duplicated (`items + items`) for seamless CSS animation loop (`ticker-scroll 30s linear infinite`)
+- [ ] Maximum 50 events stored, most recent 20 displayed
+
+##### Phase Banner
+
+- [ ] Full-width colored bar below the event ticker
+- [ ] Rolling phase: blue tint (`phase-rolling`), shows "Roll 1 of 2" or "Roll 2 of 2" + active player name in their color
+- [ ] Trading phase: green tint (`phase-trading`), shows "Buy & Sell" + active player name
+- [ ] When not your turn: shows whose turn it is
+
+##### Game Log (left sidebar)
+
+- [ ] **Last roll section**: Three dice values as small colored badges — stock symbol in its commodity color, direction colored green/red/amber (`die-up`, `die-down`, `die-dividend`), amount in neutral. Below: outcome message colored by event type.
+- [ ] **Net worth tracker**: All players ranked by net worth descending. Each entry shows:
+  - Player name (in their player color if it's you)
+  - Current net worth in monospace (`nw-current`)
+  - Change since last roll: green `+$X` (`nw-change positive`), red `-$X` (`nw-change negative`), gray dash (`nw-change neutral`)
+  - Colored bar below proportional to max net worth (`nw-bar`)
+- [ ] Client MUST snapshot all players' net worth before each roll, then show the diff after
+- [ ] CSS classes: `game-log`, `log-panel`, `last-roll`, `last-roll-result`, `last-roll-dice`, `last-roll-die`, `last-roll-message`, `net-worth-tracker`, `nw-entry`, `nw-name`, `nw-values`, `nw-current`, `nw-change`, `nw-bar`
+
+##### Stock Board (center)
+
+- [ ] 1x6 horizontal grid of **static** stock cards in fixed order: Grain, Industrial, Bonds, Oil, Silver, Gold
+
+```css
+.stock-board { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.75rem; }
+```
+
+- [ ] Cards are created ONCE via `initStockBoard()` when entering the game. DOM positions NEVER change. Only text content (price, change) is updated in place via `renderStockBoard()`. This prevents cards from jumping or reordering.
+- [ ] Each card contains: `.stock-name` (in stock color), `.stock-price` (monospace), `.stock-change`, `.stock-card-trade-slot` (empty container for trade controls)
+- [ ] `stock-change` shows the change from the **last time this stock's price changed** (previous roll that affected it), NOT overall from $1.00. Client tracks each stock's previous price.
+- [ ] **Flash animations**: When a stock is affected by a roll, the card flashes for 600ms:
+  - `flash-up`: green glow | `flash-down`: red glow | `flash-dividend`: amber glow
+  - Triggered by adding class, forcing reflow (`void card.offsetWidth`), then removing after timeout
+
+##### Trading Phase (inline on stock cards)
+
+- [ ] When `rollsRemaining` reaches 0, each card gains `.trading` class and the `.stock-card-trade-slot` is populated with buy/sell controls. Cards animate taller (CSS transition on `max-height`).
+- [ ] Trade controls per card: holdings info (`trade-holdings`), buy row, sell row
+- [ ] Quick lot buttons: presets `[1, 5, 10, 25]`. Show only presets the player can afford (buy) or owns (sell). Add "Max(N)" / "All(N)" if the max isn't a preset. Show em-dash if none available.
+- [ ] Buttons use event delegation on `#stock-board` for click handling
+- [ ] "Done Trading" button in a separate `trade-actions` container below the board. Calls `EndTurn` mutation.
+- [ ] When not your turn or during rolling: cards show market data only, no trade controls.
+
+##### Dice Area (center, below stock board)
+
+- [ ] Visible during rolling phase, hidden during trading
+- [ ] Three dice: Stock (`.die#die-stock`), Action (`.die#die-direction`), Amount (`.die#die-amount`). Each has a `.die-label` and `.die-value`.
+- [ ] **Roll animation**: Add `.rolling` class (CSS shake). 15 ticks at 80ms — random values cycle. After animation, set final values:
+  - Stock die: commodity symbol, border color = stock color
+  - Direction die: "UP ▲" / "DOWN ▼" / "DIV ★" with `result-up` / `result-down` / `result-dividend` class
+  - Amount die: cent value (e.g., "10¢")
+- [ ] Dice message below: describes outcome, colored by type
+- [ ] Roll button text: "Roll Dice (1 of 2)" → "Roll Dice (2 of 2)". After roll 2, dice area hides.
+- [ ] `rollsRemaining` synced from server via `rollsRemainingThisTurn` field to prevent desync. Client calls `syncPhaseFromServer()` after every game state update.
+
+##### Right Sidebar: Your Portfolio
+
+- [ ] Panel with border color = your player color
+- [ ] Header: your name + phase label ("Rolling (1/2)", "Trading", "Watching")
+- [ ] Stats: Cash (green), Net Worth — in `stat-box` containers
+- [ ] Holdings list: stock symbol (in color), share count, current value. "No stocks held" if empty.
+
+##### Right Sidebar: Scoreboard
+
+- [ ] All players ranked by net worth descending
+- [ ] Each entry: rank number, player name (active player highlighted with `.active` class in their color), net worth in monospace
+- [ ] Bar chart: width proportional to max net worth, colored by player color
+- [ ] In multiplayer: online/offline dot next to each name
+
+##### Right Sidebar: Chat
+
+- [ ] Message list (scroll, newest at bottom, auto-scroll on new)
+- [ ] Author name in player color + message text
+- [ ] Input field (maxlength: 200) + "Send" button. Enter key also sends.
+- [ ] Sends via `SendMessage` mutation. Receives via `MessageReceived` subscription.
+
+##### Toast Notifications
+
+- [ ] Floating notification for splits, crashes, dividends
+- [ ] Created dynamically, appended to `<body>`. Types: `split-toast`, `crash-toast`, `dividend-toast`.
+- [ ] Slide-in animation (`.show` class), auto-dismiss after 2500ms (300ms fade-out).
+- [ ] Only one toast at a time.
+
+#### 10e. Screen: Game Over / Results
+
+- [ ] Trophy emoji, "Game Over" heading
+- [ ] Players sorted by final net worth. Rank 1/2/3 use medal emojis, rank 4+ numeric.
+- [ ] Each entry: player name (in their color), profit/loss amount and percentage vs. starting $5,000, final net worth.
+- [ ] "Play Again" button (returns to lobby). In multiplayer, also "Back to Lobby".
+- [ ] Triggered by `GameEnded` subscription.
+
+#### 10f. Responsive layout
+
+- [ ] **Desktop (1200px+)**: Three-column layout. 1x6 stock card row.
+- [ ] **Tablet (768-1199px)**: Single column. Game log above board. Sidebar below. Stock board 3x2 grid.
+- [ ] **Mobile (<768px)**: Single column. Stock board 2x3 grid. Chat in slide-out drawer. Game log above board.
+
+#### 10g. Render cycle
+
+The `render()` function calls all of these on every state change:
+
+1. `initStockBoard()` — Creates 6 static card DOM elements once (Grain, Industrial, Bonds, Oil, Silver, Gold)
+2. `renderStockBoard()` — Updates price/change text inside existing cards. Injects trade controls during trading. Never recreates cards.
+3. `renderPhaseBanner()` — Phase name, active player, roll progress
+4. `renderDiceArea()` — Show/hide dice and roll button based on phase
+5. `renderPlayerPanel()` — Your cash, net worth, portfolio
+6. `renderScoreboard()` — All players ranked
+7. `renderEventTicker()` — Scrolling event feed
+8. `renderRoundDisplay()` — Turn number badge
+9. `renderGameLog()` — Left sidebar: last roll + net worth tracker
 
 ### 11. Add real-time updates with GraphQL subscriptions
 
