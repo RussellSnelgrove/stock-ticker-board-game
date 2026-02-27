@@ -101,7 +101,7 @@ For developers who cannot run containers (e.g., Docker/Podman blocked by device 
 
 **Prerequisites**:
 
-- Ruby 3.3+ (via rbenv: `brew install rbenv ruby-build && rbenv install 3.3.7`)
+- Ruby 3.3+ (via Homebrew: `brew install ruby`)
 - PostgreSQL (`brew install postgresql@16 && brew services start postgresql@16`)
 - Redis (`brew install redis && brew services start redis`)
 
@@ -109,8 +109,7 @@ For developers who cannot run containers (e.g., Docker/Podman blocked by device 
 
 ```bash
 # Add to ~/.zshrc for persistence
-eval "$(rbenv init - zsh)"
-export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
+export PATH="/opt/homebrew/opt/ruby/bin:/opt/homebrew/opt/postgresql@16/bin:$PATH"
 
 # Install gems and set up the database
 bundle install

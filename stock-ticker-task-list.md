@@ -14,6 +14,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - All tasks MUST be completed. Do not skip tasks or defer them to "later."
 - There is NO authentication. Users pick a display name and play immediately. Do NOT use Devise or any auth library.
 - A local development mode (without Docker) MUST also be supported for developers who cannot run containers.
+- Do NOT use rbenv or rvm. For local dev without Docker, use chruby or Homebrew Ruby (`brew install ruby`).
 
 ## Tasks
 
