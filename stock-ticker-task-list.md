@@ -20,6 +20,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 
 ### 1. Dockerize the app and scaffold Rails
 
+- [ ] Create a develop branch for developing
 - [ ] Install Colima, Docker CLI, and Docker Compose via Homebrew (`brew install colima docker docker-compose`)
 - [ ] Write a `Dockerfile.dev` for the Rails development environment
 - [ ] Create a `docker-compose.yml` with app, PostgreSQL (Yugabyte in production, PostgreSQL in Docker for local dev compatibility), and Redis services. The PostgreSQL health check MUST specify the database name: `pg_isready -U stock_ticker -d stock_ticker_development` (without `-d`, it defaults to a database named after the user which won't exist).
@@ -157,7 +158,10 @@ Dark theme with a financial terminal aesthetic. Dark gray background (`#0F172A`)
   - **Monospace**: JetBrains Mono (weights: 400, 500, 600, 700) — prices, numbers, dice values
 
 ```html
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link
+  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
 ```
 
 #### 9c. Color palette
@@ -295,7 +299,11 @@ The core gameplay screen. Uses a **three-column layout**: Game Log (left, 260px)
 - [ ] 1x6 horizontal grid of **static** stock cards in fixed order: Grain, Industrial, Bonds, Oil, Silver, Gold
 
 ```css
-.stock-board { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.75rem; }
+.stock-board {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.75rem;
+}
 ```
 
 - [ ] Cards are created ONCE via `initStockBoard()` when entering the game. DOM positions NEVER change. Only text content (price, change) is updated in place via `renderStockBoard()`. This prevents cards from jumping or reordering.
