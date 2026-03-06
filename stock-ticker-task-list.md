@@ -27,6 +27,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [ ] Configure environment variables so the app reads `DATABASE_URL` and `REDIS_URL` from the Docker environment
 - [ ] Install the latest stable version of Rails (`gem install rails`)
 - [ ] Scaffold a new Rails project (`rails new stock-ticker --database=postgresql`) inside the Docker container
+- [ ] Remove the Rails 8.1 Solid gems that conflict with Redis: remove `solid_cache`, `solid_queue`, and `solid_cable` from the Gemfile; delete `config/cache.yml`, `config/queue.yml`, `config/recurring.yml`, `db/cache_schema.rb`, `db/queue_schema.rb`, and `db/cable_schema.rb`; remove the Solid Queue Puma plugin from `config/puma.rb`; replace Solid references in `config/environments/production.rb` with Redis-backed equivalents
 - [ ] Verify the app runs via `docker-compose up` and is accessible at `http://localhost:3000`
 - [ ] Configure `database.yml` and `cable.yml` to use environment variables (Docker passes them in; local dev falls back to defaults)
 - [ ] Create a `.dockerignore` that excludes `.ruby-version`, `tmp/`, `log/`, `node_modules/`, `.git/`
