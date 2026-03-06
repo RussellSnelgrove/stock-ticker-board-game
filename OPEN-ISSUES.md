@@ -2,7 +2,7 @@
 
 Items that need to be addressed in the documentation before building.
 
-- [ ] **Rails 8.1 Solid gems conflict**: Rails 8.1 ships with `solid_cache`, `solid_queue`, and `solid_cable` gems that try to connect to their own databases and conflict with Redis. The task list MUST explicitly say to remove these gems from the Gemfile, delete their config files (`config/cache.yml`, `config/queue.yml`, `config/recurring.yml`, `db/cache_schema.rb`, `db/queue_schema.rb`, `db/cable_schema.rb`), remove the Solid Queue Puma plugin from `config/puma.rb`, and replace their references in `config/environments/production.rb` with Redis-backed alternatives.
+- [x] ~~**Rails 8.1 Solid gems conflict**: Added Solid gems removal step to Task 1 in the task list.~~
 - [x] ~~**importmap bare specifiers**: Added to Task 9 in the task list.~~
 - [x] ~~**`.ruby-version` conflicts**: Added `.dockerignore` and delete step to Task 1 in the task list.~~
 - [x] ~~**PostgreSQL health check**: Added `-d stock_ticker_development` requirement to Task 1 in the task list.~~
