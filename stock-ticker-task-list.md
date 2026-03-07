@@ -30,6 +30,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [ ] Remove the Rails 8.1 Solid gems that conflict with Redis: remove `solid_cache`, `solid_queue`, and `solid_cable` from the Gemfile; delete `config/cache.yml`, `config/queue.yml`, `config/recurring.yml`, `db/cache_schema.rb`, `db/queue_schema.rb`, and `db/cable_schema.rb`; remove the Solid Queue Puma plugin from `config/puma.rb`; replace Solid references in `config/environments/production.rb` with Redis-backed equivalents
 - [ ] Verify the app runs via `docker-compose up` and is accessible at `http://localhost:3000`
 - [ ] Configure `database.yml` and `cable.yml` to use environment variables (Docker passes them in; local dev falls back to defaults)
+- [ ] Set `config.action_cable.disable_request_forgery_protection = true` in `config/environments/development.rb` so WebSocket connections work from Docker and local network clients
 - [ ] Create a `.dockerignore` that excludes `.ruby-version`, `tmp/`, `log/`, `node_modules/`, `.git/`
 - [ ] Delete the `.ruby-version` file that Rails generates (it conflicts with chruby/rbenv on the host and is not needed — the Ruby version is pinned in `Dockerfile.dev`)
 - [ ] Create a `bin/docker-setup` script that runs `db:create db:migrate db:seed`
@@ -43,6 +44,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [ ] Configure the `GraphqlController` with a single `/graphql` endpoint
 - [ ] Set up the base `StockTickerSchema` with query, mutation, and subscription root types
 - [ ] Configure Action Cable with Redis as the GraphQL subscriptions transport
+- [ ] Configure `ApplicationCable::Connection` to authenticate via the Rails session cookie: read `request.session[:user_id]` and set `current_user` on the connection (reject connections with no session)
 - [ ] Add GraphiQL or GraphQL Playground for development (via `graphiql-rails` gem)
 - [ ] Write a smoke test that queries the GraphQL endpoint successfully
 
