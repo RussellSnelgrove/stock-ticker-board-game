@@ -59,7 +59,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [ ] Create a `User` model with just a `display_name` field (no authentication — users pick a name and play immediately)
 - [ ] Create a `Stock` model as a static lookup for the 6 commodities in this exact order: Grain, Industrial, Bonds, Oil, Silver, Gold
 - [ ] Create a `GameStock` model (belongs to `Game` and `Stock`) to track each stock's price within a game
-  - Fields: `current_price` (range $0.00-$2.00)
+  - Fields: `current_price` (stored as integer cents; 100 = $1.00, range 0–200)
   - Each game gets its own set of 6 `GameStock` records initialized at $1.00
 - [ ] Create a `Game` model to represent a game session and its state:
   - Fields: `name`, `invite_code`, `host` (belongs to `User`), `status`, `current_turn`, `duration`, `starts_at`, `ends_at`, `remaining_time`
