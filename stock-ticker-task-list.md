@@ -25,12 +25,13 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [ ] Write a `Dockerfile.dev` for the Rails development environment
 - [ ] Create a `docker-compose.yml` with app, PostgreSQL (Yugabyte in production, PostgreSQL in Docker for local dev compatibility), and Redis services. The PostgreSQL health check MUST specify the database name: `pg_isready -U stock_ticker -d stock_ticker_development` (without `-d`, it defaults to a database named after the user which won't exist).
 - [ ] Configure environment variables so the app reads `DATABASE_URL` and `REDIS_URL` from the Docker environment
-- [ ] Install the latest stable version of Rails (`gem install rails`)
+- [ ] Install Rails 8.1.2 on Ruby 3.3.7: `gem install rails -v 8.1.2` (pin these exact versions in `Dockerfile.dev` and `Gemfile`)
 - [ ] Scaffold a new Rails project (`rails new stock-ticker --database=postgresql`) inside the Docker container
+- [ ] Set Active Job queue adapter to `:async` in `config/environments/development.rb` (Solid Queue is removed; `:async` runs jobs in-process without a separate worker)
 - [ ] Remove the Rails 8.1 Solid gems that conflict with Redis: remove `solid_cache`, `solid_queue`, and `solid_cable` from the Gemfile; delete `config/cache.yml`, `config/queue.yml`, `config/recurring.yml`, `db/cache_schema.rb`, `db/queue_schema.rb`, and `db/cable_schema.rb`; remove the Solid Queue Puma plugin from `config/puma.rb`; replace Solid references in `config/environments/production.rb` with Redis-backed equivalents
 - [ ] Verify the app runs via `docker-compose up` and is accessible at `http://localhost:3000`
 - [ ] Configure `database.yml` and `cable.yml` to use environment variables (Docker passes them in; local dev falls back to defaults)
-- [ ] Set `config.action_cable.disable_request_forgery_protection = true` in `config/environments/development.rb` so WebSocket connections work from Docker and local network clients
+- [ ] Set `config.hosts.clear` and `config.action_cable.disable_request_forgery_protection = true` in `config/environments/development.rb` so WebSocket connections and multiplayer on a local network or via tunnels work from Docker clients
 - [ ] Create a `.dockerignore` that excludes `.ruby-version`, `tmp/`, `log/`, `node_modules/`, `.git/`
 - [ ] Delete the `.ruby-version` file that Rails generates (it conflicts with chruby/rbenv on the host and is not needed — the Ruby version is pinned in `Dockerfile.dev`)
 - [ ] Create a `bin/docker-setup` script that runs `db:create db:migrate db:seed`
@@ -64,7 +65,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
   - Fields: `current_price` (stored as integer cents; 100 = $1.00, range 0–200)
   - Each game gets its own set of 6 `GameStock` records initialized at $1.00
 - [ ] Create a `Game` model to represent a game session and its state:
-  - Fields: `name`, `invite_code`, `host` (belongs to `User`), `status`, `current_turn`, `duration`, `starts_at`, `ends_at`, `remaining_time`
+  - Fields: `name`, `invite_code` (6-character uppercase alphanumeric, generated via `SecureRandom.alphanumeric(6).upcase`), `host` (belongs to `User`), `status`, `current_turn`, `duration`, `starts_at`, `ends_at`, `remaining_time`
   - Status state machine: `waiting` (lobby, accepting players) -> `in_progress` (clock running) -> `paused` (solo only) -> `completed` (timer expired)
   - Only mutations valid for the current status should be accepted (e.g., no rolling in "waiting", no trading in "completed")
   - Expose `rolls_remaining_this_turn` as a computed field so the client can sync roll state
@@ -87,13 +88,14 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 
 ### 5. Implement game lifecycle
 
-- [ ] Define a `CreateGame` mutation (accepts a `duration` in minutes, generates an invite code, initializes 6 `GameStock` records at $1.00, sets status to "waiting" — clock does **not** start yet)
+- [ ] Define a `CreateGame` mutation (accepts a `duration` in minutes — **presets only**: 15, 30, 60, or 90; no free-form input — generates a 6-character uppercase alphanumeric invite code via `SecureRandom.alphanumeric(6).upcase`, initializes 6 `GameStock` records at $1.00, sets status to "waiting" — clock does **not** start yet)
 - [ ] Define a `StartGame` mutation (host-only) to transition the game from "waiting" to "in_progress", compute `ends_at` from the duration, and schedule the game clock expiry job
 - [ ] Define a `JoinGame` mutation to join via invite code (if the player was previously in the game, restore their state; otherwise create a new `Player` record with $5,000 cash and 0 shares)
 - [ ] Define a `LeaveGame` mutation to drop out while preserving state
 - [ ] Add a `games` query to list available and active games
 - [ ] Add a `game` query to fetch a single game by ID or invite code (includes `ends_at`, remaining time, and `rollsRemainingThisTurn`)
 - [ ] Implement game clock expiry — schedule a background job (Active Job) that fires at `ends_at` to freeze all trading, compute final net worth for all players, and set game status to "completed"
+- [ ] **Tie-breaking**: when two or more players share the same net worth at expiry, rank them by `turn_position` ascending (earlier joiner wins); surface tied ranks in the results
 - [ ] Broadcast a `GameEnded` event when the timer expires with final rankings
 - [ ] Support **solo games** — only 1 player; host creates and starts the game alone
 - [ ] Multiplayer games have **no player limit**
@@ -217,7 +219,7 @@ The app uses a screen-switching pattern. Only one `.screen` is visible at a time
 
 #### 10a. Screen: Username Entry
 
-No authentication — users pick a name and play immediately.
+No authentication — users pick a name and play immediately. (This is the app's actual entry point; replaces the old local pass-and-play setup screen from the original prototype.)
 
 - [ ] Centered card layout with the app logo (SVG bar chart: 4 colored bars — green, blue, amber, red)
 - [ ] Title "Stock Ticker" with gradient text (`linear-gradient(135deg, #F59E0B, #EF4444)`)
@@ -369,7 +371,7 @@ The core gameplay screen. Uses a **three-column layout**: Game Log (left, 260px)
 #### 10e. Screen: Game Over / Results
 
 - [ ] Trophy emoji, "Game Over" heading
-- [ ] Players sorted by final net worth. Rank 1/2/3 use medal emojis, rank 4+ numeric.
+- [ ] Players sorted by final net worth descending; ties broken by `turn_position` ascending (earlier joiner ranks higher). Rank 1/2/3 use medal emojis, rank 4+ numeric.
 - [ ] Each entry: player name (in their color), profit/loss amount and percentage vs. starting $5,000, final net worth.
 - [ ] "Play Again" button (returns to lobby). In multiplayer, also "Back to Lobby".
 - [ ] Triggered by `GameEnded` subscription.
