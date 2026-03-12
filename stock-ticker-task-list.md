@@ -20,12 +20,13 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 
 ### 1. Dockerize the app and scaffold Rails
 
-- [ ] Create a develop branch for developing
-- [ ] Install Colima, Docker CLI, and Docker Compose via Homebrew (`brew install colima docker docker-compose`)
+- [x] Create a develop branch for developing
+- [x] Install Colima, Docker CLI, and Docker Compose via Homebrew (`brew install colima docker docker-compose`)
 - [ ] Write a `Dockerfile.dev` for the Rails development environment
 - [ ] Create a `docker-compose.yml` with app, PostgreSQL (Yugabyte in production, PostgreSQL in Docker for local dev compatibility), and Redis services. The PostgreSQL health check MUST specify the database name: `pg_isready -U stock_ticker -d stock_ticker_development` (without `-d`, it defaults to a database named after the user which won't exist).
 - [ ] Configure environment variables so the app reads `DATABASE_URL` and `REDIS_URL` from the Docker environment
 - [ ] Install Rails 8.1.2 on Ruby 3.3.7: `gem install rails -v 8.1.2` (pin these exact versions in `Dockerfile.dev` and `Gemfile`)
+- [ ] Bootstrap sequence: write `Dockerfile.dev` and `docker-compose.yml` on the host first → `docker-compose build` → `docker-compose run --rm app rails new . --database=postgresql --force` to scaffold Rails into the current directory inside the container
 - [ ] Scaffold a new Rails project (`rails new stock-ticker --database=postgresql`) inside the Docker container
 - [ ] Set Active Job queue adapter to `:async` in `config/environments/development.rb` (Solid Queue is removed; `:async` runs jobs in-process without a separate worker)
 - [ ] Remove the Rails 8.1 Solid gems that conflict with Redis: remove `solid_cache`, `solid_queue`, and `solid_cable` from the Gemfile; delete `config/cache.yml`, `config/queue.yml`, `config/recurring.yml`, `db/cache_schema.rb`, `db/queue_schema.rb`, and `db/cable_schema.rb`; remove the Solid Queue Puma plugin from `config/puma.rb`; replace Solid references in `config/environments/production.rb` with Redis-backed equivalents
@@ -45,7 +46,6 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [ ] Configure the `GraphqlController` with a single `/graphql` endpoint
 - [ ] Set up the base `StockTickerSchema` with query, mutation, and subscription root types
 - [ ] Configure Action Cable with Redis as the GraphQL subscriptions transport
-- [ ] Configure `ApplicationCable::Connection` to authenticate via the Rails session cookie: read `request.session[:user_id]` and set `current_user` on the connection (reject connections with no session)
 - [ ] Add GraphiQL or GraphQL Playground for development (via `graphiql-rails` gem)
 - [ ] Write a smoke test that queries the GraphQL endpoint successfully
 
@@ -68,18 +68,19 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
   - Fields: `name`, `invite_code` (6-character uppercase alphanumeric, generated via `SecureRandom.alphanumeric(6).upcase`), `host` (belongs to `User`), `status`, `current_turn`, `duration`, `starts_at`, `ends_at`, `remaining_time`
   - Status state machine: `waiting` (lobby, accepting players) -> `in_progress` (clock running) -> `paused` (solo only) -> `completed` (timer expired)
   - Only mutations valid for the current status should be accepted (e.g., no rolling in "waiting", no trading in "completed")
-  - Expose `rolls_remaining_this_turn` as a computed field so the client can sync roll state
+  - Add `rolls_remaining_this_turn` as an integer column (default: `ROLLS_PER_TURN = 2`); decremented by `RollDice`, reset to 2 by `EndTurn`
   - Expose `active_player` as a computed method: `players.active.order(:turn_position).offset(current_turn % active_player_count).first`
 - [ ] Create a `Player` model linked to a User and a Game
-  - Fields: `cash` (starting at $5,000), `status` (active/dropped), `turn_position` (integer, set by join order)
+  - Fields: `cash` (stored as integer cents; 500_000 = $5,000 starting balance), `status` (active/dropped), `turn_position` (integer, set by join order)
 - [ ] Create a `Holding` model to track shares owned per player per `GameStock`
   - Fields: `player_id`, `game_stock_id`, `quantity` (integer, multiples of 500)
 - [ ] Create a `GameTransaction` model to log all buys, sells, dividends, and splits (use `GameTransaction` not `Transaction` to avoid Rails reserved name)
   - Fields: `player_id`, `game_stock_id`, `transaction_type` (buy/sell/dividend/split/worthless_reset), `quantity`, `price_at_time`, `total_amount`, `turn_number`
 - [ ] Create a `DiceRoll` model to record each turn's roll results
-  - Fields: `game_id`, `player_id`, `turn_number`, `stock_rolled` (references `Stock`), `direction` (up/down/dividend), `amount` ($0.05/$0.10/$0.20)
+  - Fields: `game_id`, `player_id`, `turn_number`, `stock_rolled` (references `Stock`), `direction` (up/down/dividend), `amount` (stored as integer cents; 5 = $0.05, 10 = $0.10, 20 = $0.20)
 - [ ] Create a `Message` model for in-game chat
   - Fields: `user_id`, `game_id`, `body` (max 200 chars)
+- [ ] Configure `ApplicationCable::Connection` to authenticate via the Rails session cookie: read `request.session[:user_id]`, look up the `User`, and set `current_user` on the connection (reject connections with no session or unknown user)
 - [ ] Add validations and associations between all models
 - [ ] Add Sorbet type signatures to all models
 - [ ] Define GraphQL types for each model (`GameStockType`, `GameType`, `PlayerType`, `HoldingType`, `GameTransactionType`, `DiceRollType`, `MessageType`)
@@ -101,8 +102,8 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [ ] Multiplayer games have **no player limit**
 - [ ] Turn order is determined by **join order**; mid-game joins are appended to the end of the turn order
 - [ ] Mid-game joins always start with **$5,000 cash and 0 shares** regardless of when they join; they must wait for their turn to trade
-- [ ] Allow solo players to **pause and resume** a game later via a `PauseGame` mutation (stores `remaining_time` and stops the clock; `JoinGame` resumes the clock and recomputes `ends_at`)
-- [ ] Track player presence (online/offline) within a game
+- [ ] Allow solo players to **pause and resume** a game later via a `PauseGame` mutation (stores `remaining_time` and stops the clock) and a dedicated `ResumeGame` mutation (recomputes `ends_at = Time.current + remaining_time` and reschedules the expiry job)
+- [ ] Track player presence (online/offline) within a game using Action Cable connection/disconnect callbacks on `ApplicationCable::Connection`; trigger `PlayerPresenceChanged` on connect and disconnect
 - [ ] Write unit tests for game lifecycle mutations, game clock expiry, and queries
 
 ### 6. Implement the dice and turn mechanics
@@ -122,7 +123,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [ ] Enforce the classic turn sequence: roll dice twice -> market moves after each roll -> active player may buy/sell -> end turn
 - [ ] Only allow `BuyShares` / `SellShares` mutations from the active player after they have completed both rolls
 - [ ] Define an `EndTurn` mutation that advances play to the next player (requires both rolls completed)
-- [ ] Skip turns for players who have dropped out
+- [ ] If the active player drops mid-turn (between roll 1 and roll 2), auto-roll the remaining roll(s) on their behalf using `DiceRollingService`, then advance to the next player; dropped players are skipped entirely on subsequent turns
 - [ ] Write unit tests for the `RollDice` mutation, turn sequence enforcement, price changes, splits, worthless stocks, and dividends
 
 ### 7. Implement buying and selling
@@ -413,7 +414,7 @@ The `render()` function calls all of these on every state change:
 - [ ] Define a `SendMessage` GraphQL mutation to post chat messages
 - [ ] Define a `MessageReceived` GraphQL subscription for real-time message delivery
 - [ ] Build a chat room UI in the right sidebar within the game view
-- [ ] Build out an emoji functionality so users can use emojis in the chat room
+- [ ] Emoji support via native browser emoji only — no custom picker; ensure the chat input and message rendering handle Unicode emoji correctly (UTF-8 column, no stripping)
 - [ ] Display active players in the chat
 - [ ] Write tests for the mutation, subscription, and message delivery
 
