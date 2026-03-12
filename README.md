@@ -28,7 +28,7 @@ Stock Ticker is a classic board game where players compete to build the highest 
 
 **Turn sequence**: Roll 1 → market moves → Roll 2 → market moves → trade (buy/sell) → end turn.
 
-When creating a game, the host selects a play duration (e.g., 30, 60, or 90 minutes). Players join via an invite code while the game is in the lobby. Once the host starts the game, the clock begins counting down. Turn order follows join order. When the timer reaches zero, all trading is frozen and the player with the highest net worth (cash + portfolio value) wins.
+When creating a game, the host selects a play duration (15, 30, 60, or 90 minutes). Players join via an invite code while the game is in the lobby. Once the host starts the game, the clock begins counting down. Turn order follows join order. When the timer reaches zero, all trading is frozen and the player with the highest net worth (cash + portfolio value) wins.
 
 ## Features
 
@@ -150,7 +150,6 @@ stock-ticker/
 ├── db/
 │   ├── migrate/         # Database migrations
 │   └── seeds.rb         # The 6 default stock commodities
-├── Dockerfile           # Production Dockerfile
 ├── Dockerfile.dev       # Development Dockerfile
 ├── docker-compose.yml   # App + PostgreSQL + Redis
 ├── RULES.md             # Full game rules and how to play
@@ -159,9 +158,12 @@ stock-ticker/
 
 ## Contributing
 
+All work is branched off `develop`. The `main` branch is stable — `develop` merges into `main` periodically after testing.
+
 1. Clone the repository
 2. Checkout the develop branch (`git checkout develop`)
 3. Create a feature branch (`git checkout -b feature/my-feature`)
 4. Commit your changes (`git commit -m "Add my feature"`)
 5. Push to the branch (`git push origin feature/my-feature`)
-6. Open a Pull Request
+6. Open a Pull Request targeting `develop`
+7. After testing, `develop` is merged into `main`
