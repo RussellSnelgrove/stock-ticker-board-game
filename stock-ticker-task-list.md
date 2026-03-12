@@ -68,6 +68,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
   - Status state machine: `waiting` (lobby, accepting players) -> `in_progress` (clock running) -> `paused` (solo only) -> `completed` (timer expired)
   - Only mutations valid for the current status should be accepted (e.g., no rolling in "waiting", no trading in "completed")
   - Expose `rolls_remaining_this_turn` as a computed field so the client can sync roll state
+  - Expose `active_player` as a computed method: `players.active.order(:turn_position).offset(current_turn % active_player_count).first`
 - [ ] Create a `Player` model linked to a User and a Game
   - Fields: `cash` (starting at $5,000), `status` (active/dropped), `turn_position` (integer, set by join order)
 - [ ] Create a `Holding` model to track shares owned per player per `GameStock`

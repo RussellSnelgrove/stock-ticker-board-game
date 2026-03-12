@@ -2,7 +2,6 @@
 
 Items that need to be addressed in the documentation before building.
 
-- [ ] **`active_player` computation**: Define the formula for determining whose turn it is. Specify: `players.active.order(:turn_position).offset(current_turn % active_player_count).first`. This should be in the Game model section of Task 4.
 - [ ] **Invite code format**: Specify "6-character uppercase alphanumeric, generated via `SecureRandom.alphanumeric(6).upcase`".
 - [ ] **Duration options**: Specify the exact select options: 15, 30, 60, 90 minutes. State whether free-form input is allowed or only these presets.
 - [ ] **Background job adapter**: Specify that Active Job should use the `:async` adapter for development (since Solid Queue is removed). Note this in Task 1 or Task 5.
