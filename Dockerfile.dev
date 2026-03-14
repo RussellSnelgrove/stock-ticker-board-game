@@ -7,6 +7,8 @@ RUN apt-get update -qq && \
       curl \
     && rm -rf /var/lib/apt/lists/*
 
+ENV BUNDLE_PATH=/usr/local/bundle
+
 WORKDIR /app
 
 COPY Gemfile Gemfile.lock ./
