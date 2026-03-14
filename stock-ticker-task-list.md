@@ -22,7 +22,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 
 - [x] Create a develop branch for developing
 - [x] Install Colima, Docker CLI, and Docker Compose via Homebrew (`brew install colima docker docker-compose`)
-- [ ] Write a `Dockerfile.dev` for the Rails development environment
+- [x] Write a `Dockerfile.dev` for the Rails development environment
 - [ ] Create a `docker-compose.yml` with app, PostgreSQL (Yugabyte in production, PostgreSQL in Docker for local dev compatibility), and Redis services. The PostgreSQL health check MUST specify the database name: `pg_isready -U stock_ticker -d stock_ticker_development` (without `-d`, it defaults to a database named after the user which won't exist).
 - [ ] Configure environment variables so the app reads `DATABASE_URL` and `REDIS_URL` from the Docker environment
 - [ ] Install Rails 8.1.2 on Ruby 3.3.7: `gem install rails -v 8.1.2` (pin these exact versions in `Dockerfile.dev` and `Gemfile`)
