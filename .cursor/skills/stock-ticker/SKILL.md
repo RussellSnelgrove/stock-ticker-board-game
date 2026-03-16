@@ -1,11 +1,11 @@
 ---
 name: stock-ticker
-description: Build and modify the Stock Ticker multiplayer board game. Use when working on game logic, UI, GraphQL API, Docker setup, models, or any file in this project. Covers game rules, architecture decisions, known gotchas, and project constraints.
+description: Build and modify the Stock Ticker multiplayer board game. Use when working on game logic, UI, GraphQL API, Docker setup, models, or any file in this project. Covers game rules, architecture, open issues (OPEN-ISSUES.md), setup/workflow (README.md), known gotchas, and constraints.
 ---
 
 # Stock Ticker Game
 
-Multiplayer web adaptation of the classic Stock Ticker board game. Ruby on Rails + GraphQL + Redis + vanilla JS.
+Multiplayer web adaptation of the classic Stock Ticker board game. Ruby on Rails + GraphQL + Redis + vanilla JS. Features: no login (display name + session), multiplayer via invite code, game clock (15/30/60/90 min), two rolls per turn then trade, solo play with pause/resume, drop-in/drop-out, real-time updates, in-game chat. Database PostgreSQL (Yugabyte-compatible for production); identity is session-based.
 
 ## Project Docs
 
@@ -14,6 +14,20 @@ Read these before making changes:
 - [stock-ticker-task-list.md](../../../stock-ticker-task-list.md) — Full build spec with all tasks, game rules, UI spec, and constraints
 - [README.md](../../../README.md) — Setup instructions (Docker and local), tech stack, project structure
 - [OPEN-ISSUES.md](../../../OPEN-ISSUES.md) — Unresolved items that need decisions before implementing
+
+## Open Issues (unresolved)
+
+Decisions from OPEN-ISSUES.md — resolve or confirm with the user before implementing; do not assume an answer.
+
+| # | Topic | Options |
+|---|--------|--------|
+| **Q1** | `GameTransaction.price_at_time` and `total_amount` | Integer cents (consistent with GameStock/Player) vs other |
+| **Q2** | `Game.duration` and `Game.remaining_time` | A: Integer seconds (Ruby Time-friendly). B: Integer minutes (preset-friendly). |
+| **Q3** | `Game.status` and `Player.status` | A: Rails enum (integer). B: String column (readable/debug). |
+| **Q4** | Solo player calls `JoinGame` on own paused game | A: Return error, use ResumeGame. B: Succeed, restore state only; must call ResumeGame to resume. |
+| **Q5** | Auto-roll when active player drops mid-turn | A: Inline in `LeaveGame` (if active and rolls left, auto-roll then advance). B: Background job. |
+| **Q6** | `PlayerPresenceChanged` on disconnect — which game? | A: Store `game_id` on connection when subscribing. B: Look up player's game from DB on disconnect. |
+| **Q7** | "Display active players in the chat" | A: Persistent online list in sidebar. B: System messages in feed ("X joined"). C: Both. |
 
 ## Hard Constraints
 
@@ -44,6 +58,7 @@ Jobs: GameClockExpiryJob
 
 ## Game Mechanics Quick Reference
 
+- **Dice (3 per roll)**: Die 1 = which stock (1/6 each); Die 2 = direction (Up / Down / Dividend); Die 3 = amount ($0.05 / $0.10 / $0.20). All uniformly weighted.
 - **6 stocks**: Grain, Industrial, Bonds, Oil, Silver, Gold — each with a unique color
 - **Prices in cents** (integer): 100 = $1.00, range 0–200
 - **2 rolls per turn**, then trade, then end turn
@@ -107,3 +122,10 @@ These caused bugs during the first build. Check for them in code review:
 | Services | `app/services/` | `dice_rolling_service.rb`, `trading_service.rb` |
 | Jobs | `app/jobs/` | `game_clock_expiry_job.rb` |
 | JS | `app/javascript/` | `game_client.js` (pin as `"game_client"` in importmap) |
+
+## Setup & workflow (from README)
+
+- **Docker (primary)**: `colima start --cpu 4 --memory 6 --vm-type vz --vz-rosetta` then `docker-compose up --build`. First time: `docker-compose exec app bin/docker-setup`. App at `http://localhost:3000`.
+- **Local (no Docker)**: Ruby 3.3+, PostgreSQL 16, Redis. `bundle install`, `bin/rails db:create db:migrate db:seed`, `bin/rails server`. Set PATH for Homebrew Ruby/PostgreSQL.
+- **Tests**: In Docker `docker-compose exec app bin/rails test`; locally `bundle exec rails test`.
+- **Branching**: Work off `develop`; PRs target `develop`; `main` is stable.
