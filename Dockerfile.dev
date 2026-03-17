@@ -8,6 +8,7 @@ RUN apt-get update -qq && \
     && rm -rf /var/lib/apt/lists/*
 
 ENV BUNDLE_PATH=/usr/local/bundle
+ENV PATH=/usr/local/bundle/bin:$PATH
 
 WORKDIR /app
 
