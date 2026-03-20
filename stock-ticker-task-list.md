@@ -26,8 +26,8 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [x] Create a `docker-compose.yml` with app, PostgreSQL (Yugabyte in production, PostgreSQL in Docker for local dev compatibility), and Redis services. The PostgreSQL health check MUST specify the database name: `pg_isready -U stock_ticker -d stock_ticker_development` (without `-d`, it defaults to a database named after the user which won't exist).
 - [x] Configure environment variables so the app reads `DATABASE_URL` and `REDIS_URL` from the Docker environment
 - [x] Install Rails 8.1.2 on Ruby 3.3.7: `gem install rails -v 8.1.2` (pin these exact versions in `Dockerfile.dev` and `Gemfile`)
-- [ ] Bootstrap sequence: write `Dockerfile.dev` and `docker-compose.yml` on the host first → `docker-compose build` → `docker-compose run --rm app rails new . --database=postgresql --force` to scaffold Rails into the current directory inside the container
-- [ ] Scaffold a new Rails project (`rails new stock-ticker --database=postgresql`) inside the Docker container
+- [x] Bootstrap sequence: write `Dockerfile.dev` and `docker-compose.yml` on the host first → `docker-compose build` → `docker-compose run --rm app rails new . --database=postgresql --force` to scaffold Rails into the current directory inside the container
+- [x] Scaffold a new Rails project (`rails new stock-ticker --database=postgresql`) inside the Docker container
 - [ ] Set Active Job queue adapter to `:async` in `config/environments/development.rb` (Solid Queue is removed; `:async` runs jobs in-process without a separate worker)
 - [ ] Remove the Rails 8.1 Solid gems that conflict with Redis: remove `solid_cache`, `solid_queue`, and `solid_cable` from the Gemfile; delete `config/cache.yml`, `config/queue.yml`, `config/recurring.yml`, `db/cache_schema.rb`, `db/queue_schema.rb`, and `db/cable_schema.rb`; remove the Solid Queue Puma plugin from `config/puma.rb`; replace Solid references in `config/environments/production.rb` with Redis-backed equivalents
 - [ ] Verify the app runs via `docker-compose up` and is accessible at `http://localhost:3000`
