@@ -52,6 +52,9 @@ Rails.application.configure do
   # Append comments with runtime information tags to SQL queries in logs.
   config.active_record.query_log_tags_enabled = true
 
+  # Use async adapter for Active Job (runs jobs in-process, no separate worker needed)
+  config.active_job.queue_adapter = :async
+
   # Highlight code that enqueued background job in logs.
   config.active_job.verbose_enqueue_logs = true
 
@@ -67,8 +70,11 @@ Rails.application.configure do
   # Annotate rendered view with file names.
   config.action_view.annotate_rendered_view_with_filenames = true
 
-  # Uncomment if you wish to allow Action Cable access from any origin.
-  # config.action_cable.disable_request_forgery_protection = true
+  # Allow requests from any host (needed for Docker and local network multiplayer).
+  config.hosts.clear
+
+  # Allow Action Cable connections from any origin (needed for WebSockets in Docker).
+  config.action_cable.disable_request_forgery_protection = true
 
   # Raise error when a before_action's only/except options reference missing actions.
   config.action_controller.raise_on_missing_callback_actions = true
