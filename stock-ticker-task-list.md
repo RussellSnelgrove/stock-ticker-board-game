@@ -50,7 +50,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [x] Remove the Rails 8.1 Solid gems that conflict with Redis: remove `solid_cache`, `solid_queue`, and `solid_cable` from the Gemfile; delete `config/cache.yml`, `config/queue.yml`, `config/recurring.yml`, `db/cache_schema.rb`, `db/queue_schema.rb`, and `db/cable_schema.rb`; remove the Solid Queue Puma plugin from `config/puma.rb`; replace Solid references in `config/environments/production.rb` with Redis-backed equivalents
   > **Why**: Rails 8.1 ships with Solid gems that use the database for caching, queuing, and Action Cable. We're using Redis for all of these instead — it's faster, more appropriate for real-time features, and avoids running multiple database backends.
 
-- [ ] Verify the app runs via `docker-compose up` and is accessible at `http://localhost:3000`
+- [x] Verify the app runs via `docker-compose up` and is accessible at `http://localhost:3000`
   > **Why**: Confirms all the Docker configuration, environment variables, and Rails setup work together end-to-end before moving on to building features.
 
 - [x] Configure `database.yml` and `cable.yml` to use environment variables (Docker passes them in; local dev falls back to defaults)
