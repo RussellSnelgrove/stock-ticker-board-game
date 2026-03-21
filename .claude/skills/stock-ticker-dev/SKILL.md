@@ -237,6 +237,19 @@ Only one `.screen` visible at a time (toggled via `.active` class). 5 screens:
 
 ---
 
+## Task List Workflow
+
+### Marking tasks complete
+When a task is completed, update `stock-ticker-task-list.md` and mark the checkbox as `[x]`.
+
+### Task explanations
+Each task in `stock-ticker-task-list.md` should have a brief explanation underneath it describing **why** the decision was made or why it is needed. When adding new tasks or completing existing ones, ensure the explanation is present. Format:
+
+```markdown
+- [x] Task description
+  > **Why**: Brief explanation of the reasoning or need behind this decision.
+```
+
 ## Dev Environment
 
 ### Start (Docker — primary)
