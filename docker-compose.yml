@@ -9,7 +9,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: postgres://stock_ticker:password@postgres:5432/stock_ticker_development
+      DATABASE_URL: postgres://user:password@postgres:5432/stock_ticker_development
       REDIS_URL: redis://redis:6379/0
       RAILS_ENV: development
     depends_on:
@@ -27,7 +27,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U stock_ticker -d stock_ticker_development"]
+      test: ["CMD-SHELL", "pg_isready -U user -d stock_ticker_development"]
       interval: 5s
       timeout: 5s
       retries: 5
