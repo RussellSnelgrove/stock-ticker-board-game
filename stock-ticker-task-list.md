@@ -59,7 +59,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [x] Set `config.hosts.clear` and `config.action_cable.disable_request_forgery_protection = true` in `config/environments/development.rb` so WebSocket connections and multiplayer on a local network or via tunnels work from Docker clients
   > **Why**: Rails 6+ blocks requests from unknown hosts by default. When running in Docker, the app is accessed via `localhost` from outside the container, and WebSocket connections come from browser origins that don't match the container's hostname. These settings disable those checks in development only.
 
-- [ ] Create a `.dockerignore` that excludes `.ruby-version`, `tmp/`, `log/`, `node_modules/`, `.git/`
+- [x] Create a `.dockerignore` that excludes `.ruby-version`, `tmp/`, `log/`, `node_modules/`, `.git/`
   > **Why**: Prevents unnecessary files from being sent to Docker during builds. Excluding `tmp/`, `log/`, and `.git/` keeps the build context small and fast, and avoids accidentally copying dev state into the image.
 
 - [ ] Delete the `.ruby-version` file that Rails generates (it conflicts with chruby/rbenv on the host and is not needed — the Ruby version is pinned in `Dockerfile.dev`)
