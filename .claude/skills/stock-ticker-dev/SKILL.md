@@ -270,6 +270,8 @@ docker-compose down -v          # wipe all data
 colima stop
 ```
 
+**Note**: Since `.:/app` is mounted as a volume, Ruby file changes (controllers, models, etc.) are reflected immediately without restarting the container.
+
 ### Local Dev (no Docker)
 ```bash
 export PATH="/opt/homebrew/opt/ruby/bin:/opt/homebrew/opt/postgresql@16/bin:$PATH"
