@@ -73,13 +73,13 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 
 ### 2. Set up GraphQL
 
-- [ ] Add the `graphql-ruby` gem to the Gemfile
+- [x] Add the `graphql-ruby` gem to the Gemfile
   > **Why**: `graphql-ruby` is the standard Ruby implementation of the GraphQL spec. It provides the schema definition DSL, type system, mutation/query/subscription support, and Action Cable integration we need.
 
-- [ ] Run the GraphQL generator (`rails generate graphql:install`)
+- [x] Run the GraphQL generator (`rails generate graphql:install`)
   > **Why**: Scaffolds the base schema file, `GraphqlController`, base types, and the channel for subscriptions so we don't have to write boilerplate from scratch.
 
-- [ ] Configure the `GraphqlController` with a single `/graphql` endpoint
+- [x] Configure the `GraphqlController` with a single `/graphql` endpoint
   > **Why**: GraphQL uses a single endpoint for all operations (queries, mutations, subscriptions) unlike REST's multiple endpoints. This simplifies routing and keeps all API logic in one place.
 
 - [ ] Set up the base `StockTickerSchema` with query, mutation, and subscription root types
