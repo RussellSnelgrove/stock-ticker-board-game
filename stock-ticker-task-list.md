@@ -65,10 +65,10 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [x] Create a `bin/docker-setup` script that runs `db:create db:migrate db:seed`
   > **Why**: Gives new developers a single command to initialise the database inside Docker on first run, rather than having to know the individual Rails commands.
 
-- [ ] Document local development mode (without Docker) using locally installed Ruby, PostgreSQL, and Redis
+- [x] Document local development mode (without Docker) using locally installed Ruby, PostgreSQL, and Redis
   > **Why**: Some developers can't run Docker (e.g., device policy restrictions). The README must explain how to set up the app locally using Homebrew Ruby, PostgreSQL, and Redis so those developers aren't blocked.
 
-- [ ] Set up a Git repository and make an initial commit
+- [x] Set up a Git repository and make an initial commit
   > **Why**: Establishes version control from the start so all changes are tracked and the project history is preserved.
 
 ### 2. Set up GraphQL
