@@ -62,9 +62,6 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [x] Create a `.dockerignore` that excludes `.ruby-version`, `tmp/`, `log/`, `node_modules/`, `.git/`
   > **Why**: Prevents unnecessary files from being sent to Docker during builds. Excluding `tmp/`, `log/`, and `.git/` keeps the build context small and fast, and avoids accidentally copying dev state into the image.
 
-- [ ] Delete the `.ruby-version` file that Rails generates (it conflicts with chruby/rbenv on the host and is not needed — the Ruby version is pinned in `Dockerfile.dev`)
-  > **Why**: `.ruby-version` is read by rbenv/chruby on the host machine and can cause version mismatch errors if the host doesn't have that Ruby installed. Since we run in Docker, the version is pinned in `Dockerfile.dev` — the `.ruby-version` file is redundant and causes confusion.
-
 - [x] Create a `bin/docker-setup` script that runs `db:create db:migrate db:seed`
   > **Why**: Gives new developers a single command to initialise the database inside Docker on first run, rather than having to know the individual Rails commands.
 
