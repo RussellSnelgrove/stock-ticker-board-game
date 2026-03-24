@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 set -e
 
-echo "Running RuboCop..."
+echo "Running RuboCop Lint check..."
 bundle exec rubocop
