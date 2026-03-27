@@ -12,7 +12,7 @@ down:
 	docker-compose down
 
 clean:
-	docker-compose down -v
+	docker-compose down -v --remove-orphans
 	colima stop
 
 setup:
