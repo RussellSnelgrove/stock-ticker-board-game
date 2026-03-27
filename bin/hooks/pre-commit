@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 set -e
 
-echo "Running RuboCop Lint check..."
+echo "Running RuboCop lint check..."
 bundle exec rubocop
+
+echo "Scanning for Rails security vulnerabilities..."
+bin/brakeman --no-pager --quiet
+
+echo "Scanning gems for known CVEs..."
+bin/bundler-audit
+
+echo "Scanning JS dependencies for known CVEs..."
+bin/importmap audit
