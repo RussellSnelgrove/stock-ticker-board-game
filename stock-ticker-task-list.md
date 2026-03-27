@@ -82,7 +82,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [x] Configure the `GraphqlController` with a single `/graphql` endpoint
   > **Why**: GraphQL uses a single endpoint for all operations (queries, mutations, subscriptions) unlike REST's multiple endpoints. This simplifies routing and keeps all API logic in one place.
 
-- [ ] Set up the base `StockTickerSchema` with query, mutation, and subscription root types
+- [x] Set up the base `StockTickerSchema` with query, mutation, and subscription root types
   > **Why**: The schema is the entry point for all GraphQL operations. Defining query, mutation, and subscription roots upfront establishes the structure that all future types and resolvers hang off.
 
 - [ ] Configure Action Cable with Redis as the GraphQL subscriptions transport
