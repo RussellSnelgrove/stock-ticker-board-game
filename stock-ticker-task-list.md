@@ -85,7 +85,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [x] Set up the base `StockTickerSchema` with query, mutation, and subscription root types
   > **Why**: The schema is the entry point for all GraphQL operations. Defining query, mutation, and subscription roots upfront establishes the structure that all future types and resolvers hang off.
 
-- [ ] Configure Action Cable with Redis as the GraphQL subscriptions transport
+- [x] Configure Action Cable with Redis as the GraphQL subscriptions transport
   > **Why**: GraphQL subscriptions require a pub/sub backend to push updates to connected clients. Action Cable handles the WebSocket connections, and Redis is the message bus that allows multiple server processes to broadcast to all subscribers.
 
 - [ ] Add GraphiQL or GraphQL Playground for development (via `graphiql-rails` gem)

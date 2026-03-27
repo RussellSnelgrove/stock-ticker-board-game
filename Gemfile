@@ -16,6 +16,9 @@ gem "tzinfo-data", platforms: %i[ windows jruby ]
 # GraphQL API
 gem "graphql"
 
+# Redis — Action Cable adapter + cache store
+gem "redis", "~> 5.0"
+
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
 
