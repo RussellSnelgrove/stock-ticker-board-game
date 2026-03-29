@@ -96,10 +96,10 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 
 ### 3. Add Sorbet for type safety
 
-- [ ] Install the `sorbet` and `tapioca` gems
+- [x] Install the `sorbet` and `tapioca` gems
   > **Why**: Sorbet adds static type checking to Ruby. `tapioca` generates the RBI (Ruby Interface) files that teach Sorbet about gems and Rails internals. Together they catch type errors at development time rather than in production.
 
-- [ ] Run `tapioca init` to generate RBI files (including RBIs for `graphql-ruby`)
+- [x] Run `tapioca init` to generate RBI files (including RBIs for `graphql-ruby`)
   > **Why**: Without RBI files, Sorbet doesn't know the types of methods provided by gems like `graphql-ruby` and Rails, so it can't type-check code that uses them.
 
 - [ ] Configure Sorbet strictness levels per file

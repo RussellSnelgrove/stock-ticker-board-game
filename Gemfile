@@ -40,6 +40,10 @@ group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
   gem "graphiql-rails"
+
+  # Sorbet type checking
+  gem "sorbet", require: false
+  gem "tapioca", require: false
 end
 
 group :test do
