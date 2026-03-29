@@ -88,7 +88,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [x] Configure Action Cable with Redis as the GraphQL subscriptions transport
   > **Why**: GraphQL subscriptions require a pub/sub backend to push updates to connected clients. Action Cable handles the WebSocket connections, and Redis is the message bus that allows multiple server processes to broadcast to all subscribers.
 
-- [ ] Add GraphiQL or GraphQL Playground for development (via `graphiql-rails` gem)
+- [x] Add GraphiQL or GraphQL Playground for development (via `graphiql-rails` gem)
   > **Why**: Provides an in-browser IDE for exploring and testing the GraphQL API during development. Makes it easy to write queries, inspect the schema, and debug without a separate client.
 
 - [ ] Write a smoke test that queries the GraphQL endpoint successfully
