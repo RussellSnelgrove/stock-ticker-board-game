@@ -91,7 +91,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [x] Add GraphiQL or GraphQL Playground for development (via `graphiql-rails` gem)
   > **Why**: Provides an in-browser IDE for exploring and testing the GraphQL API during development. Makes it easy to write queries, inspect the schema, and debug without a separate client.
 
-- [ ] Write a smoke test that queries the GraphQL endpoint successfully
+- [x] Write a smoke test that queries the GraphQL endpoint successfully
   > **Why**: Verifies the GraphQL endpoint is wired up correctly and returns a valid response. Catches configuration issues early before any real resolvers are built.
 
 ### 3. Add Sorbet for type safety
