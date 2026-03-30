@@ -22,6 +22,9 @@ gem "redis", "~> 5.0"
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
 
+# Sorbet runtime — provides sig, T::, etc. at runtime (checker is dev-only)
+gem "sorbet-runtime"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
@@ -41,9 +44,10 @@ group :development do
   gem "web-console"
   gem "graphiql-rails"
 
-  # Sorbet type checking
+  # Sorbet type checking + RBI generation
   gem "sorbet", require: false
   gem "tapioca", require: false
+  gem "rubocop-sorbet", require: false
 end
 
 group :test do

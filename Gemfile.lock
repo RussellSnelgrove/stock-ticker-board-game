@@ -283,6 +283,9 @@ GEM
       rubocop (>= 1.72)
       rubocop-performance (>= 1.24)
       rubocop-rails (>= 2.30)
+    rubocop-sorbet (0.12.0)
+      lint_roller
+      rubocop (>= 1.75.2)
     ruby-progressbar (1.13.0)
     rubyzip (3.2.2)
     securerandom (0.4.1)
@@ -369,8 +372,10 @@ DEPENDENCIES
   rails (~> 8.1.2)
   redis (~> 5.0)
   rubocop-rails-omakase
+  rubocop-sorbet
   selenium-webdriver
   sorbet
+  sorbet-runtime
   tapioca
   tzinfo-data
   web-console

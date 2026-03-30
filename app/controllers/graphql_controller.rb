@@ -1,3 +1,4 @@
+# typed: strict
 # frozen_string_literal: true
 
 class GraphqlController < ApplicationController
@@ -6,6 +7,7 @@ class GraphqlController < ApplicationController
   # but you'll have to authenticate your user separately
   protect_from_forgery with: :null_session
 
+  sig { void }
   def execute
     variables = prepare_variables(params[:variables])
     query = params[:query]
@@ -24,6 +26,7 @@ class GraphqlController < ApplicationController
   private
 
   # Handle variables in form data, JSON body, or a blank value
+  sig { params(variables_param: T.untyped).returns(T.untyped) }
   def prepare_variables(variables_param)
     case variables_param
     when String
@@ -43,6 +46,7 @@ class GraphqlController < ApplicationController
     end
   end
 
+  sig { params(e: StandardError).void }
   def handle_error_in_development(e)
     logger.error e.message
     logger.error e.backtrace.join("\n")

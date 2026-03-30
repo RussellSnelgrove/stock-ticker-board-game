@@ -1,10 +1,13 @@
+# typed: true
 # frozen_string_literal: true
 
 class GraphqlChannel < ApplicationCable::Channel
+  sig { void }
   def subscribed
-    @subscription_ids = []
+    @subscription_ids = T.let([], T::Array[T.untyped])
   end
 
+  sig { params(data: T::Hash[String, T.untyped]).void }
   def execute(data)
     query = data["query"]
     variables = ensure_hash(data["variables"])
@@ -30,6 +33,7 @@ class GraphqlChannel < ApplicationCable::Channel
     transmit(payload)
   end
 
+  sig { void }
   def unsubscribed
     @subscription_ids.each do |sid|
       StockTickerSchema.subscriptions.delete_subscription(sid)
@@ -38,6 +42,7 @@ class GraphqlChannel < ApplicationCable::Channel
 
   private
 
+  sig { params(value: T.untyped).returns(T::Hash[T.untyped, T.untyped]) }
   def ensure_hash(value)
     case value
     when String

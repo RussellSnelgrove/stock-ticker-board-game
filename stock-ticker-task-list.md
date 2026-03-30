@@ -102,13 +102,13 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [x] Run `tapioca init` to generate RBI files (including RBIs for `graphql-ruby`)
   > **Why**: Without RBI files, Sorbet doesn't know the types of methods provided by gems like `graphql-ruby` and Rails, so it can't type-check code that uses them.
 
-- [ ] Configure Sorbet strictness levels per file
+- [x] Configure Sorbet strictness levels per file
   > **Why**: Sorbet has graduated strictness levels (`# typed: false`, `ignore`, `true`, `strict`). Starting at `false` for generated files and `true` for new code lets us adopt Sorbet incrementally without having to type every existing file at once.
 
-- [ ] Add typed signatures (`sig`) to the GraphQL schema, controller, models, and services as they are built
+- [x] Add typed signatures (`sig`) to the GraphQL schema, controller, models, and services as they are built
   > **Why**: Type signatures document the expected inputs and outputs of methods and let Sorbet verify them statically. Most valuable on services and models where bugs from wrong types are hardest to catch.
 
-- [ ] Integrate Sorbet type checking into the development workflow
+- [x] Integrate Sorbet type checking into the development workflow
   > **Why**: Running `srb tc` (Sorbet type check) should be part of the CI pipeline and local dev so type errors are caught before they reach production.
 
 ### 4. Build the Stock Ticker data models

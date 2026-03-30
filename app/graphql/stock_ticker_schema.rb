@@ -1,3 +1,4 @@
+# typed: strict
 # frozen_string_literal: true
 
 class StockTickerSchema < GraphQL::Schema
@@ -8,10 +9,12 @@ class StockTickerSchema < GraphQL::Schema
   use GraphQL::Subscriptions::ActionCableSubscriptions
   use GraphQL::Dataloader
 
+  sig { params(err: T.untyped, context: T.untyped).void }
   def self.type_error(err, context)
     super
   end
 
+  sig { params(abstract_type: T.untyped, obj: T.untyped, ctx: T.untyped).returns(T.untyped) }
   def self.resolve_type(abstract_type, obj, ctx)
     raise(GraphQL::RequiredImplementationMissingError)
   end
