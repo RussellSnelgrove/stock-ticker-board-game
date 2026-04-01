@@ -116,7 +116,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [x] Create a `User` model with just a `display_name` field (no authentication — users pick a name and play immediately)
   > **Why**: The game has no login — users just pick a name. A lightweight `User` record ties a session to a display name and persists it across page reloads without requiring auth infrastructure.
 
-- [ ] Create a `Stock` model as a static lookup for the 6 commodities in this exact order: Grain, Industrial, Bonds, Oil, Silver, Gold
+- [x] Create a `Stock` model as a static lookup for the 6 commodities in this exact order: Grain, Industrial, Bonds, Oil, Silver, Gold
   > **Why**: The 6 commodities are fixed and universal — they never change between games. A seeded lookup table is the right model for static reference data. Fixed order matters for consistent UI rendering.
 
 - [ ] Create a `GameStock` model (belongs to `Game` and `Stock`) to track each stock's price within a game
