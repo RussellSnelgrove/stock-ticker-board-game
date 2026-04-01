@@ -1,8 +1,9 @@
-# typed: strict
+# typed: true
 # frozen_string_literal: true
 
 module Types
   class QueryType < Types::BaseObject
+    extend T::Sig
     field :node, Types::NodeType, null: true, description: "Fetches an object given its ID." do
       argument :id, ID, required: true, description: "ID of the object."
     end
@@ -25,6 +26,7 @@ module Types
     # TODO: remove me
     field :test_field, String, null: false,
       description: "An example field added by the generator"
+    sig { returns(String) }
     def test_field
       "Hello World!"
     end

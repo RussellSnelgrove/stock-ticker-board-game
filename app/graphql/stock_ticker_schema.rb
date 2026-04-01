@@ -9,12 +9,14 @@ class StockTickerSchema < GraphQL::Schema
   use GraphQL::Subscriptions::ActionCableSubscriptions
   use GraphQL::Dataloader
 
-  sig { params(err: T.untyped, context: T.untyped).void }
+  T::Sig::WithoutRuntime.sig { params(err: T.untyped, context: T.untyped).void }
   def self.type_error(err, context)
     super
   end
 
-  sig { params(abstract_type: T.untyped, obj: T.untyped, ctx: T.untyped).returns(T.untyped) }
+  # graphql-ruby prepends ResolveTypeWithType onto this method, so we use
+  # WithoutRuntime to avoid a conflict with sorbet-runtime's wrapper.
+  T::Sig::WithoutRuntime.sig { params(abstract_type: T.untyped, obj: T.untyped, ctx: T.untyped).returns(T.untyped) }
   def self.resolve_type(abstract_type, obj, ctx)
     raise(GraphQL::RequiredImplementationMissingError)
   end

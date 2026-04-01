@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 class GraphqlController < ApplicationController
+  extend T::Sig
   # If accessing from outside this domain, nullify the session
   # This allows for outside API access while preventing CSRF attacks,
   # but you'll have to authenticate your user separately
@@ -49,7 +50,7 @@ class GraphqlController < ApplicationController
   sig { params(e: StandardError).void }
   def handle_error_in_development(e)
     logger.error e.message
-    logger.error e.backtrace.join("\n")
+    logger.error T.must(e.backtrace).join("\n")
 
     render json: { errors: [ { message: e.message, backtrace: e.backtrace } ], data: {} }, status: 500
   end

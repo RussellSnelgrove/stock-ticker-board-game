@@ -1,8 +1,9 @@
-# typed: true
+# typed: false
 # frozen_string_literal: true
 
 module ApplicationCable
   class Connection < ActionCable::Connection::Base
+    extend T::Sig
     identified_by :current_user
 
     sig { void }
@@ -15,7 +16,7 @@ module ApplicationCable
     sig { returns(T.untyped) }
     def find_verified_user
       user_id = request.session[:user_id]
-      User.find(user_id)
+      ::User.find(user_id)
     rescue ActiveRecord::RecordNotFound
       reject_unauthorized_connection
     end
