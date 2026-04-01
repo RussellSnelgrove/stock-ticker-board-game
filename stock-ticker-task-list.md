@@ -113,7 +113,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 
 ### 4. Build the Stock Ticker data models
 
-- [ ] Create a `User` model with just a `display_name` field (no authentication — users pick a name and play immediately)
+- [x] Create a `User` model with just a `display_name` field (no authentication — users pick a name and play immediately)
   > **Why**: The game has no login — users just pick a name. A lightweight `User` record ties a session to a display name and persists it across page reloads without requiring auth infrastructure.
 
 - [ ] Create a `Stock` model as a static lookup for the 6 commodities in this exact order: Grain, Industrial, Bonds, Oil, Silver, Gold
