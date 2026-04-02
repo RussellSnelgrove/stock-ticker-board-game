@@ -10,9 +10,37 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_01_034414) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_02_033410) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "game_stocks", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "current_price", default: 100, null: false
+    t.bigint "game_id", null: false
+    t.bigint "stock_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["game_id", "stock_id"], name: "index_game_stocks_on_game_id_and_stock_id", unique: true
+    t.index ["game_id"], name: "index_game_stocks_on_game_id"
+    t.index ["stock_id"], name: "index_game_stocks_on_stock_id"
+  end
+
+  create_table "games", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "current_turn", default: 0, null: false
+    t.integer "duration", null: false
+    t.datetime "ends_at"
+    t.bigint "host_id", null: false
+    t.string "invite_code", null: false
+    t.string "name", null: false
+    t.integer "remaining_time"
+    t.integer "rolls_remaining_this_turn", default: 2, null: false
+    t.datetime "starts_at"
+    t.string "status", default: "waiting", null: false
+    t.datetime "updated_at", null: false
+    t.index ["host_id"], name: "index_games_on_host_id"
+    t.index ["invite_code"], name: "index_games_on_invite_code", unique: true
+  end
 
   create_table "stocks", force: :cascade do |t|
     t.datetime "created_at", null: false
@@ -26,4 +54,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_01_034414) do
     t.string "display_name", null: false
     t.datetime "updated_at", null: false
   end
+
+  add_foreign_key "game_stocks", "games"
+  add_foreign_key "game_stocks", "stocks"
+  add_foreign_key "games", "users", column: "host_id"
 end

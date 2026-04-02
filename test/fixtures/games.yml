@@ -1,0 +1,19 @@
+waiting_game:
+  name: Test Game
+  invite_code: WAIT01
+  host: one
+  status: waiting
+  current_turn: 0
+  duration: 30
+  rolls_remaining_this_turn: 2
+
+active_game:
+  name: Active Game
+  invite_code: ACT001
+  host: one
+  status: in_progress
+  current_turn: 3
+  duration: 60
+  starts_at: <%= 10.minutes.ago %>
+  ends_at: <%= 50.minutes.from_now %>
+  rolls_remaining_this_turn: 2

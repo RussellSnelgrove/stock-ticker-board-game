@@ -1,0 +1,14 @@
+grain_in_game_one:
+  game: active_game
+  stock: grain
+  current_price: 100
+
+industrial_in_game_one:
+  game: active_game
+  stock: industrial
+  current_price: 120
+
+bonds_in_game_one:
+  game: active_game
+  stock: bonds
+  current_price: 80

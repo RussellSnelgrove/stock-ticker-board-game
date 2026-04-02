@@ -119,12 +119,12 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [x] Create a `Stock` model as a static lookup for the 6 commodities in this exact order: Grain, Industrial, Bonds, Oil, Silver, Gold
   > **Why**: The 6 commodities are fixed and universal — they never change between games. A seeded lookup table is the right model for static reference data. Fixed order matters for consistent UI rendering.
 
-- [ ] Create a `GameStock` model (belongs to `Game` and `Stock`) to track each stock's price within a game
+- [x] Create a `GameStock` model (belongs to `Game` and `Stock`) to track each stock's price within a game
   - Fields: `current_price` (stored as integer cents; 100 = $1.00, range 0–200)
   - Each game gets its own set of 6 `GameStock` records initialized at $1.00
   > **Why**: Each game has independent stock prices — a split in one game doesn't affect another. `GameStock` is the join between a game and a commodity that carries the per-game price state. Storing price as integer cents avoids floating-point rounding errors.
 
-- [ ] Create a `Game` model to represent a game session and its state:
+- [x] Create a `Game` model to represent a game session and its state:
   - Fields: `name`, `invite_code` (6-character uppercase alphanumeric, generated via `SecureRandom.alphanumeric(6).upcase`), `host` (belongs to `User`), `status`, `current_turn`, `duration`, `starts_at`, `ends_at`, `remaining_time`
   - Status state machine: `waiting` (lobby, accepting players) -> `in_progress` (clock running) -> `paused` (solo only) -> `completed` (timer expired)
   - Only mutations valid for the current status should be accepted (e.g., no rolling in "waiting", no trading in "completed")
