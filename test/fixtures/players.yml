@@ -1,0 +1,13 @@
+player_one:
+  user: one
+  game: active_game
+  cash: 500000
+  status: active
+  turn_position: 0
+
+player_two:
+  user: two
+  game: active_game
+  cash: 380000
+  status: active
+  turn_position: 1

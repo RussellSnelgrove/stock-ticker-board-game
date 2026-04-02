@@ -63,23 +63,21 @@ class Game < ApplicationRecord
 
   # Computed ------------------------------------------------------------------
 
-  # Returns the player whose turn it is, or nil if no active players.
-  # Return type is T.untyped until the Player model is created.
-  sig { returns(T.untyped) }
+  sig { returns(T.nilable(Player)) }
   def active_player
     return nil unless in_progress?
 
     count = active_player_count
     return nil if count.zero?
 
-    T.unsafe(self).players.active.order(:turn_position).offset(current_turn % count).first
+    players.active.order(:turn_position).offset(current_turn % count).first
   end
 
   private
 
   sig { returns(Integer) }
   def active_player_count
-    T.unsafe(self).players.active.count
+    players.active.count
   end
 
   sig { void }

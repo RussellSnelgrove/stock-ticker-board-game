@@ -132,7 +132,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
   - Expose `active_player` as a computed method: `players.active.order(:turn_position).offset(current_turn % active_player_count).first`
   > **Why**: `Game` is the central model everything else belongs to. The status state machine enforces valid transitions and prevents illegal actions (e.g., rolling after the game ends). `rolls_remaining_this_turn` is stored on the server — not tracked client-side — to prevent desync. The invite code lets players join by sharing a short code instead of a long URL.
 
-- [ ] Create a `Player` model linked to a User and a Game
+- [x] Create a `Player` model linked to a User and a Game
   - Fields: `cash` (stored as integer cents; 500_000 = $5,000 starting balance), `status` (active/dropped), `turn_position` (integer, set by join order)
   > **Why**: A `Player` is the join between a `User` and a `Game`, carrying per-game state (cash, turn position, active/dropped). Separating `User` from `Player` allows the same user to play in multiple games simultaneously.
 

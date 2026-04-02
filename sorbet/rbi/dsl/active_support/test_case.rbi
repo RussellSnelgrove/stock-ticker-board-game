@@ -16,6 +16,11 @@ class ActiveSupport::TestCase
   end
   def game_stocks(fixture_name = nil, *other_fixtures); end
 
+  sig { params(fixture_name: NilClass, other_fixtures: NilClass).returns(T::Array[Game]) }
+  sig { params(fixture_name: T.any(String, Symbol), other_fixtures: NilClass).returns(Game) }
+  sig { params(fixture_name: T.any(String, Symbol), other_fixtures: T.any(String, Symbol)).returns(T::Array[Game]) }
+  def games(fixture_name = nil, *other_fixtures); end
+
   sig { params(fixture_name: NilClass, other_fixtures: NilClass).returns(T::Array[Stock]) }
   sig { params(fixture_name: T.any(String, Symbol), other_fixtures: NilClass).returns(Stock) }
   sig { params(fixture_name: T.any(String, Symbol), other_fixtures: T.any(String, Symbol)).returns(T::Array[Stock]) }
