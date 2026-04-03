@@ -441,6 +441,20 @@ class GameStock
     sig { returns(T::Boolean) }
     def game_previously_changed?; end
 
+    sig { returns(T::Array[T.untyped]) }
+    def game_transaction_ids; end
+
+    sig { params(ids: T::Array[T.untyped]).returns(T::Array[T.untyped]) }
+    def game_transaction_ids=(ids); end
+
+    # This method is created by ActiveRecord on the `GameStock` class because it declared `has_many :game_transactions`.
+    # 🔗 [Rails guide for `has_many` association](https://guides.rubyonrails.org/association_basics.html#the-has-many-association)
+    sig { returns(::GameTransaction::PrivateCollectionProxy) }
+    def game_transactions; end
+
+    sig { params(value: T::Enumerable[::GameTransaction]).void }
+    def game_transactions=(value); end
+
     sig { returns(T.nilable(::Game)) }
     def reload_game; end
 

@@ -41,6 +41,11 @@ class ActiveSupport::TestCase
   sig { params(fixture_name: T.any(String, Symbol), other_fixtures: T.any(String, Symbol)).returns(T::Array[Game]) }
   def games(fixture_name = nil, *other_fixtures); end
 
+  sig { params(fixture_name: NilClass, other_fixtures: NilClass).returns(T::Array[Message]) }
+  sig { params(fixture_name: T.any(String, Symbol), other_fixtures: NilClass).returns(Message) }
+  sig { params(fixture_name: T.any(String, Symbol), other_fixtures: T.any(String, Symbol)).returns(T::Array[Message]) }
+  def messages(fixture_name = nil, *other_fixtures); end
+
   sig { params(fixture_name: NilClass, other_fixtures: NilClass).returns(T::Array[Player]) }
   sig { params(fixture_name: T.any(String, Symbol), other_fixtures: NilClass).returns(Player) }
   sig { params(fixture_name: T.any(String, Symbol), other_fixtures: T.any(String, Symbol)).returns(T::Array[Player]) }

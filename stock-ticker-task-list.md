@@ -155,13 +155,13 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [x] Configure `ApplicationCable::Connection` to authenticate via the Rails session cookie: read `request.session[:user_id]`, look up the `User`, and set `current_user` on the connection (reject connections with no session or unknown user)
   > **Why**: Action Cable WebSocket connections need to know who is connecting so subscriptions can be scoped to the right game and player. Reading the Rails session cookie (same one used for HTTP requests) avoids duplicating auth logic.
 
-- [ ] Add validations and associations between all models
+- [x] Add validations and associations between all models
   > **Why**: Database-level constraints (via migrations) and model-level validations (via ActiveRecord) together ensure data integrity. Without them, bugs can silently corrupt game state.
 
-- [ ] Add Sorbet type signatures to all models
+- [x] Add Sorbet type signatures to all models
   > **Why**: Models are used everywhere — having typed signatures catches wrong argument types early and documents what each method expects.
 
-- [ ] Define GraphQL types for each model (`GameStockType`, `GameType`, `PlayerType`, `HoldingType`, `GameTransactionType`, `DiceRollType`, `MessageType`)
+- [x] Define GraphQL types for each model (`GameStockType`, `GameType`, `PlayerType`, `HoldingType`, `GameTransactionType`, `DiceRollType`, `MessageType`)
   > **Why**: GraphQL types define the shape of the API — what fields clients can query. Each model needs a corresponding type so the frontend can access its data.
 
 - [ ] Seed the database with the 6 static `Stock` records in order: Grain, Industrial, Bonds, Oil, Silver, Gold

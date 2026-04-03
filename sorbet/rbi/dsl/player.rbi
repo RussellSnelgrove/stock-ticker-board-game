@@ -397,6 +397,20 @@ class Player
     sig { params(args: T.untyped, blk: T.untyped).returns(::User) }
     def create_user!(*args, &blk); end
 
+    sig { returns(T::Array[T.untyped]) }
+    def dice_roll_ids; end
+
+    sig { params(ids: T::Array[T.untyped]).returns(T::Array[T.untyped]) }
+    def dice_roll_ids=(ids); end
+
+    # This method is created by ActiveRecord on the `Player` class because it declared `has_many :dice_rolls`.
+    # 🔗 [Rails guide for `has_many` association](https://guides.rubyonrails.org/association_basics.html#the-has-many-association)
+    sig { returns(::DiceRoll::PrivateCollectionProxy) }
+    def dice_rolls; end
+
+    sig { params(value: T::Enumerable[::DiceRoll]).void }
+    def dice_rolls=(value); end
+
     sig { returns(T.nilable(::Game)) }
     def game; end
 
@@ -408,6 +422,20 @@ class Player
 
     sig { returns(T::Boolean) }
     def game_previously_changed?; end
+
+    sig { returns(T::Array[T.untyped]) }
+    def game_transaction_ids; end
+
+    sig { params(ids: T::Array[T.untyped]).returns(T::Array[T.untyped]) }
+    def game_transaction_ids=(ids); end
+
+    # This method is created by ActiveRecord on the `Player` class because it declared `has_many :game_transactions`.
+    # 🔗 [Rails guide for `has_many` association](https://guides.rubyonrails.org/association_basics.html#the-has-many-association)
+    sig { returns(::GameTransaction::PrivateCollectionProxy) }
+    def game_transactions; end
+
+    sig { params(value: T::Enumerable[::GameTransaction]).void }
+    def game_transactions=(value); end
 
     sig { returns(T.nilable(::Game)) }
     def reload_game; end

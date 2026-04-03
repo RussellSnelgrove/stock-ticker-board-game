@@ -7,6 +7,9 @@ class Player < ApplicationRecord
   belongs_to :user
   belongs_to :game
 
+  has_many :game_transactions, dependent: :destroy
+  has_many :dice_rolls, dependent: :destroy
+
   enum :status, {
     active: "active",
     dropped: "dropped"

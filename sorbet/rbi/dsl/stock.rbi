@@ -6,6 +6,7 @@
 
 
 class Stock
+  include GeneratedAssociationMethods
   include GeneratedAttributeMethods
   extend CommonRelationMethods
   extend GeneratedRelationMethods
@@ -357,6 +358,22 @@ class Stock
 
     sig { returns(::Stock) }
     def third_to_last!; end
+  end
+
+  module GeneratedAssociationMethods
+    sig { returns(T::Array[T.untyped]) }
+    def game_stock_ids; end
+
+    sig { params(ids: T::Array[T.untyped]).returns(T::Array[T.untyped]) }
+    def game_stock_ids=(ids); end
+
+    # This method is created by ActiveRecord on the `Stock` class because it declared `has_many :game_stocks`.
+    # 🔗 [Rails guide for `has_many` association](https://guides.rubyonrails.org/association_basics.html#the-has-many-association)
+    sig { returns(::GameStock::PrivateCollectionProxy) }
+    def game_stocks; end
+
+    sig { params(value: T::Enumerable[::GameStock]).void }
+    def game_stocks=(value); end
   end
 
   module GeneratedAssociationRelationMethods

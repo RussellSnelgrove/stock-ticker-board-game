@@ -401,6 +401,20 @@ class Game
     def create_host!(*args, &blk); end
 
     sig { returns(T::Array[T.untyped]) }
+    def dice_roll_ids; end
+
+    sig { params(ids: T::Array[T.untyped]).returns(T::Array[T.untyped]) }
+    def dice_roll_ids=(ids); end
+
+    # This method is created by ActiveRecord on the `Game` class because it declared `has_many :dice_rolls`.
+    # 🔗 [Rails guide for `has_many` association](https://guides.rubyonrails.org/association_basics.html#the-has-many-association)
+    sig { returns(::DiceRoll::PrivateCollectionProxy) }
+    def dice_rolls; end
+
+    sig { params(value: T::Enumerable[::DiceRoll]).void }
+    def dice_rolls=(value); end
+
+    sig { returns(T::Array[T.untyped]) }
     def game_stock_ids; end
 
     sig { params(ids: T::Array[T.untyped]).returns(T::Array[T.untyped]) }
@@ -425,6 +439,20 @@ class Game
 
     sig { returns(T::Boolean) }
     def host_previously_changed?; end
+
+    sig { returns(T::Array[T.untyped]) }
+    def message_ids; end
+
+    sig { params(ids: T::Array[T.untyped]).returns(T::Array[T.untyped]) }
+    def message_ids=(ids); end
+
+    # This method is created by ActiveRecord on the `Game` class because it declared `has_many :messages`.
+    # 🔗 [Rails guide for `has_many` association](https://guides.rubyonrails.org/association_basics.html#the-has-many-association)
+    sig { returns(::Message::PrivateCollectionProxy) }
+    def messages; end
+
+    sig { params(value: T::Enumerable[::Message]).void }
+    def messages=(value); end
 
     sig { returns(T::Array[T.untyped]) }
     def player_ids; end

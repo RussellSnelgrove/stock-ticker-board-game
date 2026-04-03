@@ -10,6 +10,8 @@ class Game < ApplicationRecord
   belongs_to :host, class_name: "User"
   has_many :game_stocks, dependent: :destroy
   has_many :players, dependent: :destroy
+  has_many :dice_rolls, dependent: :destroy
+  has_many :messages, dependent: :destroy
 
   enum :status, {
     waiting: "waiting",

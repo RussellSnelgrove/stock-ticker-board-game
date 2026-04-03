@@ -6,6 +6,7 @@
 
 
 class User
+  include GeneratedAssociationMethods
   include GeneratedAttributeMethods
   extend CommonRelationMethods
   extend GeneratedRelationMethods
@@ -357,6 +358,50 @@ class User
 
     sig { returns(::User) }
     def third_to_last!; end
+  end
+
+  module GeneratedAssociationMethods
+    sig { returns(T::Array[T.untyped]) }
+    def game_ids; end
+
+    sig { params(ids: T::Array[T.untyped]).returns(T::Array[T.untyped]) }
+    def game_ids=(ids); end
+
+    # This method is created by ActiveRecord on the `User` class because it declared `has_many :games, through: :players`.
+    # 🔗 [Rails guide for `has_many_through` association](https://guides.rubyonrails.org/association_basics.html#the-has-many-through-association)
+    sig { returns(::Game::PrivateCollectionProxy) }
+    def games; end
+
+    sig { params(value: T::Enumerable[::Game]).void }
+    def games=(value); end
+
+    sig { returns(T::Array[T.untyped]) }
+    def message_ids; end
+
+    sig { params(ids: T::Array[T.untyped]).returns(T::Array[T.untyped]) }
+    def message_ids=(ids); end
+
+    # This method is created by ActiveRecord on the `User` class because it declared `has_many :messages`.
+    # 🔗 [Rails guide for `has_many` association](https://guides.rubyonrails.org/association_basics.html#the-has-many-association)
+    sig { returns(::Message::PrivateCollectionProxy) }
+    def messages; end
+
+    sig { params(value: T::Enumerable[::Message]).void }
+    def messages=(value); end
+
+    sig { returns(T::Array[T.untyped]) }
+    def player_ids; end
+
+    sig { params(ids: T::Array[T.untyped]).returns(T::Array[T.untyped]) }
+    def player_ids=(ids); end
+
+    # This method is created by ActiveRecord on the `User` class because it declared `has_many :players`.
+    # 🔗 [Rails guide for `has_many` association](https://guides.rubyonrails.org/association_basics.html#the-has-many-association)
+    sig { returns(::Player::PrivateCollectionProxy) }
+    def players; end
+
+    sig { params(value: T::Enumerable[::Player]).void }
+    def players=(value); end
   end
 
   module GeneratedAssociationRelationMethods
