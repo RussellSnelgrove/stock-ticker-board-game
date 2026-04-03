@@ -1,0 +1,15 @@
+roll_one:
+  game: active_game
+  player: player_one
+  stock_rolled: grain
+  turn_number: 3
+  direction: up
+  amount: 10
+
+roll_two:
+  game: active_game
+  player: player_one
+  stock_rolled: oil
+  turn_number: 3
+  direction: down
+  amount: 5

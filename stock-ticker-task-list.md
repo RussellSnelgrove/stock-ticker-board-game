@@ -144,7 +144,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
   - Fields: `player_id`, `game_stock_id`, `transaction_type` (buy/sell/dividend/split/worthless_reset), `quantity`, `price_at_time`, `total_amount`, `turn_number`
   > **Why**: A full audit log of every financial event in the game. Powers the game history view and makes it possible to reconstruct a player's net worth at any point. `Transaction` is a reserved name in Rails/ActiveRecord so we use `GameTransaction`.
 
-- [ ] Create a `DiceRoll` model to record each turn's roll results
+- [x] Create a `DiceRoll` model to record each turn's roll results
   - Fields: `game_id`, `player_id`, `turn_number`, `stock_rolled` (references `Stock`), `direction` (up/down/dividend), `amount` (stored as integer cents; 5 = $0.05, 10 = $0.10, 20 = $0.20)
   > **Why**: Persisting roll results means late-joining players and page refreshes can reconstruct the game log. Also useful for verifying the dice are truly random and for replaying game history.
 
