@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_03_022847) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_03_221220) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -73,6 +73,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_03_022847) do
     t.index ["invite_code"], name: "index_games_on_invite_code", unique: true
   end
 
+  create_table "messages", force: :cascade do |t|
+    t.string "body", limit: 200, null: false
+    t.datetime "created_at", null: false
+    t.bigint "game_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["game_id", "created_at"], name: "index_messages_on_game_id_and_created_at"
+    t.index ["game_id"], name: "index_messages_on_game_id"
+    t.index ["user_id"], name: "index_messages_on_user_id"
+  end
+
   create_table "players", force: :cascade do |t|
     t.integer "cash", default: 500000, null: false
     t.datetime "created_at", null: false
@@ -108,6 +119,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_03_022847) do
   add_foreign_key "game_transactions", "game_stocks"
   add_foreign_key "game_transactions", "players"
   add_foreign_key "games", "users", column: "host_id"
+  add_foreign_key "messages", "games"
+  add_foreign_key "messages", "users"
   add_foreign_key "players", "games"
   add_foreign_key "players", "users"
 end

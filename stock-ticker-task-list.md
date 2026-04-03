@@ -148,7 +148,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
   - Fields: `game_id`, `player_id`, `turn_number`, `stock_rolled` (references `Stock`), `direction` (up/down/dividend), `amount` (stored as integer cents; 5 = $0.05, 10 = $0.10, 20 = $0.20)
   > **Why**: Persisting roll results means late-joining players and page refreshes can reconstruct the game log. Also useful for verifying the dice are truly random and for replaying game history.
 
-- [ ] Create a `Message` model for in-game chat
+- [x] Create a `Message` model for in-game chat
   - Fields: `user_id`, `game_id`, `body` (max 200 chars)
   > **Why**: Persisting chat messages means players who reconnect can see recent chat history rather than a blank room. The 200-char limit keeps messages readable.
 
