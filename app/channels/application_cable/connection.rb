@@ -16,6 +16,7 @@ module ApplicationCable
     sig { returns(T.untyped) }
     def find_verified_user
       user_id = request.session[:user_id]
+      reject_unauthorized_connection unless user_id
       ::User.find(user_id)
     rescue ActiveRecord::RecordNotFound
       reject_unauthorized_connection

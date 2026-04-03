@@ -152,7 +152,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
   - Fields: `user_id`, `game_id`, `body` (max 200 chars)
   > **Why**: Persisting chat messages means players who reconnect can see recent chat history rather than a blank room. The 200-char limit keeps messages readable.
 
-- [ ] Configure `ApplicationCable::Connection` to authenticate via the Rails session cookie: read `request.session[:user_id]`, look up the `User`, and set `current_user` on the connection (reject connections with no session or unknown user)
+- [x] Configure `ApplicationCable::Connection` to authenticate via the Rails session cookie: read `request.session[:user_id]`, look up the `User`, and set `current_user` on the connection (reject connections with no session or unknown user)
   > **Why**: Action Cable WebSocket connections need to know who is connecting so subscriptions can be scoped to the right game and player. Reading the Rails session cookie (same one used for HTTP requests) avoids duplicating auth logic.
 
 - [ ] Add validations and associations between all models
