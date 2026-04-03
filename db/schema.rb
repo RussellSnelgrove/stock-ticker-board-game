@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_02_034726) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_03_022423) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -23,6 +23,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_02_034726) do
     t.index ["game_id", "stock_id"], name: "index_game_stocks_on_game_id_and_stock_id", unique: true
     t.index ["game_id"], name: "index_game_stocks_on_game_id"
     t.index ["stock_id"], name: "index_game_stocks_on_stock_id"
+  end
+
+  create_table "game_transactions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "game_stock_id", null: false
+    t.bigint "player_id", null: false
+    t.integer "price_at_time", null: false
+    t.integer "quantity", default: 0, null: false
+    t.integer "total_amount", null: false
+    t.string "transaction_type", null: false
+    t.integer "turn_number", null: false
+    t.datetime "updated_at", null: false
+    t.index ["game_stock_id", "turn_number"], name: "index_game_transactions_on_game_stock_id_and_turn_number"
+    t.index ["game_stock_id"], name: "index_game_transactions_on_game_stock_id"
+    t.index ["player_id", "turn_number"], name: "index_game_transactions_on_player_id_and_turn_number"
+    t.index ["player_id"], name: "index_game_transactions_on_player_id"
   end
 
   create_table "games", force: :cascade do |t|
@@ -71,6 +87,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_02_034726) do
 
   add_foreign_key "game_stocks", "games"
   add_foreign_key "game_stocks", "stocks"
+  add_foreign_key "game_transactions", "game_stocks"
+  add_foreign_key "game_transactions", "players"
   add_foreign_key "games", "users", column: "host_id"
   add_foreign_key "players", "games"
   add_foreign_key "players", "users"

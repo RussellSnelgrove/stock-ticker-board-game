@@ -140,7 +140,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
   - Fields: `player_id`, `game_stock_id`, `quantity` (integer, multiples of 500)
   > **Why**: Holdings are the core portfolio data. A separate model (rather than embedding in `Player`) lets us query "who holds what" efficiently, which is needed for splits, worthless resets, and dividend payouts.
 
-- [ ] Create a `GameTransaction` model to log all buys, sells, dividends, and splits (use `GameTransaction` not `Transaction` to avoid Rails reserved name)
+- [x] Create a `GameTransaction` model to log all buys, sells, dividends, and splits (use `GameTransaction` not `Transaction` to avoid Rails reserved name)
   - Fields: `player_id`, `game_stock_id`, `transaction_type` (buy/sell/dividend/split/worthless_reset), `quantity`, `price_at_time`, `total_amount`, `turn_number`
   > **Why**: A full audit log of every financial event in the game. Powers the game history view and makes it possible to reconstruct a player's net worth at any point. `Transaction` is a reserved name in Rails/ActiveRecord so we use `GameTransaction`.
 
