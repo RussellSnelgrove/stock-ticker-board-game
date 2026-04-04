@@ -30,7 +30,7 @@ class Game < ApplicationRecord
     less_than_or_equal_to: ROLLS_PER_TURN
   }
 
-  before_create :generate_invite_code
+  before_validation :generate_invite_code, on: :create
 
   # Transitions ---------------------------------------------------------------
 
@@ -84,6 +84,8 @@ class Game < ApplicationRecord
 
   sig { void }
   def generate_invite_code
+    return if invite_code.present?
+
     loop do
       self.invite_code = SecureRandom.alphanumeric(6).upcase
       break unless Game.exists?(invite_code: invite_code)
