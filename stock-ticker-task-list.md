@@ -167,7 +167,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [x] Seed the database with the 6 static `Stock` records in order: Grain, Industrial, Bonds, Oil, Silver, Gold
   > **Why**: The 6 commodities must exist before any game can be created. Seeding them in `db/seeds.rb` ensures they're present in every environment (development, test, production) after `db:seed` runs.
 
-- [ ] Write unit tests for all model validations and associations
+- [x] Write unit tests for all model validations and associations
   > **Why**: Models are the foundation of the app. Tests here catch broken validations, missing associations, and constraint violations before they cause runtime errors.
 
 ### 5. Implement game lifecycle
