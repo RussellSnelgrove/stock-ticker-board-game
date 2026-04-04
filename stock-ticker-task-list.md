@@ -164,7 +164,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [x] Define GraphQL types for each model (`GameStockType`, `GameType`, `PlayerType`, `HoldingType`, `GameTransactionType`, `DiceRollType`, `MessageType`)
   > **Why**: GraphQL types define the shape of the API — what fields clients can query. Each model needs a corresponding type so the frontend can access its data.
 
-- [ ] Seed the database with the 6 static `Stock` records in order: Grain, Industrial, Bonds, Oil, Silver, Gold
+- [x] Seed the database with the 6 static `Stock` records in order: Grain, Industrial, Bonds, Oil, Silver, Gold
   > **Why**: The 6 commodities must exist before any game can be created. Seeding them in `db/seeds.rb` ensures they're present in every environment (development, test, production) after `db:seed` runs.
 
 - [ ] Write unit tests for all model validations and associations
