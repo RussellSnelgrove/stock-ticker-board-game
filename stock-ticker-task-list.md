@@ -172,7 +172,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 
 ### 5. Implement game lifecycle
 
-- [ ] Define a `CreateGame` mutation (accepts a `duration` in minutes — **presets only**: 15, 30, 60, or 90; no free-form input — generates a 6-character uppercase alphanumeric invite code via `SecureRandom.alphanumeric(6).upcase`, initializes 6 `GameStock` records at $1.00, sets status to "waiting" — clock does **not** start yet)
+- [x] Define a `CreateGame` mutation (accepts a `duration` in minutes — **presets only**: 15, 30, 60, or 90; no free-form input — generates a 6-character uppercase alphanumeric invite code via `SecureRandom.alphanumeric(6).upcase`, initializes 6 `GameStock` records at $1.00, sets status to "waiting" — clock does **not** start yet)
   > **Why**: Creating a game and starting it are separate actions — the host needs time to share the invite code and wait for players to join before the clock begins. Duration presets match the original board game and prevent edge cases from arbitrary durations.
 
 - [ ] Define a `StartGame` mutation (host-only) to transition the game from "waiting" to "in_progress", compute `ends_at` from the duration, and schedule the game clock expiry job
