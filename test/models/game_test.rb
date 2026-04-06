@@ -114,6 +114,8 @@ class GameTest < ActiveSupport::TestCase
     game.start!
     assert game.in_progress?
     assert_not_nil game.starts_at
+    assert_not_nil game.ends_at
+    assert T.must(game.ends_at) > T.must(game.starts_at)
   end
 
   test "start! raises when game is not waiting" do

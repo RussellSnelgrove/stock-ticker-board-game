@@ -38,7 +38,8 @@ class Game < ApplicationRecord
   def start!
     raise "Game must be in waiting status to start" unless waiting?
 
-    update!(status: :in_progress, starts_at: Time.current)
+    now = Time.current
+    update!(status: :in_progress, starts_at: now, ends_at: now + duration.minutes)
   end
 
   sig { void }
