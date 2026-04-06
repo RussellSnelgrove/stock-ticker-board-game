@@ -30,7 +30,7 @@ class Mutations::CreateGameTest < ActiveSupport::TestCase
       context: { current_user: users(:one) }
     )
 
-    data = result.dig("data", "createGame")
+    data = result.to_h.dig("data", "createGame")
     assert_empty data["errors"]
 
     game = data["game"]
@@ -52,7 +52,7 @@ class Mutations::CreateGameTest < ActiveSupport::TestCase
       context: { current_user: users(:one) }
     )
 
-    data = result.dig("data", "createGame")
+    data = result.to_h.dig("data", "createGame")
     assert_nil data["game"]
     assert_includes data["errors"].first, "Duration must be one of"
   end
@@ -64,7 +64,7 @@ class Mutations::CreateGameTest < ActiveSupport::TestCase
       context: { current_user: nil }
     )
 
-    data = result.dig("data", "createGame")
+    data = result.to_h.dig("data", "createGame")
     assert_nil data["game"]
     assert_includes data["errors"].first, "logged in"
   end
@@ -76,7 +76,7 @@ class Mutations::CreateGameTest < ActiveSupport::TestCase
       context: { current_user: users(:one) }
     )
 
-    data = result.dig("data", "createGame")
+    data = result.to_h.dig("data", "createGame")
     assert_nil data["game"]
     assert data["errors"].any?
   end
