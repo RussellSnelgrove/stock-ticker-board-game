@@ -17,3 +17,14 @@ active_game:
   starts_at: <%= 10.minutes.ago %>
   ends_at: <%= 50.minutes.from_now %>
   rolls_remaining_this_turn: 2
+
+completed_game:
+  name: Finished Game
+  invite_code: DONE01
+  host: one
+  status: completed
+  current_turn: 12
+  duration: 15
+  starts_at: <%= 20.minutes.ago %>
+  ends_at: <%= 5.minutes.ago %>
+  rolls_remaining_this_turn: 2

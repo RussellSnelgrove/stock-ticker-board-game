@@ -184,7 +184,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [x] Define a `LeaveGame` mutation to drop out while preserving state
   > **Why**: Players can leave and rejoin without penalty. Preserving state (rather than deleting the player) means their portfolio survives a disconnect or browser close.
 
-- [ ] Add a `games` query to list available and active games
+- [x] Add a `games` query to list available and active games
   > **Why**: Powers the lobby screen where players can see open games to join. Filters to games in `waiting` or `in_progress` status.
 
 - [ ] Add a `game` query to fetch a single game by ID or invite code (includes `ends_at`, remaining time, and `rollsRemainingThisTurn`)
