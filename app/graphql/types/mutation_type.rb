@@ -6,5 +6,6 @@ module Types
     field :create_game, mutation: Mutations::CreateGame
     field :start_game, mutation: Mutations::StartGame
     field :join_game, mutation: Mutations::JoinGame
+    field :leave_game, mutation: Mutations::LeaveGame
   end
 end

@@ -181,7 +181,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [x] Define a `JoinGame` mutation to join via invite code (if the player was previously in the game, restore their state; otherwise create a new `Player` record with $5,000 cash and 0 shares)
   > **Why**: The invite code is the join mechanism. Restoring state on rejoin means dropped players don't lose their portfolio when they reconnect. New players always start at $5,000 regardless of when they join — mid-game joins are explicitly supported.
 
-- [ ] Define a `LeaveGame` mutation to drop out while preserving state
+- [x] Define a `LeaveGame` mutation to drop out while preserving state
   > **Why**: Players can leave and rejoin without penalty. Preserving state (rather than deleting the player) means their portfolio survives a disconnect or browser close.
 
 - [ ] Add a `games` query to list available and active games
