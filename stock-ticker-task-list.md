@@ -178,7 +178,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [x] Define a `StartGame` mutation (host-only) to transition the game from "waiting" to "in_progress", compute `ends_at` from the duration, and schedule the game clock expiry job
   > **Why**: Only the host should control when the game starts. `ends_at` is computed at start time (not creation time) so the full duration is available from the moment play begins. The expiry job is scheduled here so it fires at exactly the right time.
 
-- [ ] Define a `JoinGame` mutation to join via invite code (if the player was previously in the game, restore their state; otherwise create a new `Player` record with $5,000 cash and 0 shares)
+- [x] Define a `JoinGame` mutation to join via invite code (if the player was previously in the game, restore their state; otherwise create a new `Player` record with $5,000 cash and 0 shares)
   > **Why**: The invite code is the join mechanism. Restoring state on rejoin means dropped players don't lose their portfolio when they reconnect. New players always start at $5,000 regardless of when they join — mid-game joins are explicitly supported.
 
 - [ ] Define a `LeaveGame` mutation to drop out while preserving state

@@ -11,3 +11,10 @@ player_two:
   cash: 380000
   status: active
   turn_position: 1
+
+dropped_player:
+  user: three
+  game: active_game
+  cash: 120000
+  status: dropped
+  turn_position: 2
