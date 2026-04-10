@@ -187,7 +187,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [x] Add a `games` query to list available and active games
   > **Why**: Powers the lobby screen where players can see open games to join. Filters to games in `waiting` or `in_progress` status.
 
-- [ ] Add a `game` query to fetch a single game by ID or invite code (includes `ends_at`, remaining time, and `rollsRemainingThisTurn`)
+- [x] Add a `game` query to fetch a single game by ID or invite code (includes `ends_at`, remaining time, and `rollsRemainingThisTurn`)
   > **Why**: The primary query for the game board. The client polls or subscribes to this to keep its state in sync. `rollsRemainingThisTurn` is included to prevent client/server desync on the roll count.
 
 - [ ] Implement game clock expiry — schedule a background job (Active Job) that fires at `ends_at` to freeze all trading, compute final net worth for all players, and set game status to "completed"
