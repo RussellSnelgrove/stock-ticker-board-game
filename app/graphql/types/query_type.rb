@@ -23,6 +23,22 @@ module Types
     # Add root-level fields here.
     # They will be entry points for queries on your schema.
 
+    field :game, Types::GameType, null: true,
+      description: "Fetch a single game by ID or invite code" do
+      argument :id, ID, required: false
+      argument :invite_code, String, required: false
+    end
+    sig { params(id: T.nilable(String), invite_code: T.nilable(String)).returns(T.nilable(Game)) }
+    def game(id: nil, invite_code: nil)
+      raise GraphQL::ExecutionError, "Provide id or invite_code" if id.nil? && invite_code.nil?
+
+      if id
+        Game.find_by(id: id)
+      else
+        Game.find_by(invite_code: invite_code)
+      end
+    end
+
     field :games, [ Types::GameType ], null: false,
       description: "List games in waiting or in_progress status"
     sig { returns(ActiveRecord::Relation) }
