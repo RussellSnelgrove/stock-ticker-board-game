@@ -196,7 +196,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [x] **Tie-breaking**: when two or more players share the same net worth at expiry, rank them by `turn_position` ascending (earlier joiner wins); surface tied ranks in the results
   > **Why**: Provides a deterministic, fair tie-breaking rule. Earlier joiners took more risk by playing longer, so they win ties. The rule is communicated upfront so players understand it.
 
-- [ ] Broadcast a `GameEnded` event when the timer expires with final rankings
+- [x] Broadcast a `GameEnded` event when the timer expires with final rankings
   > **Why**: All connected clients need to know the game is over so they can transition to the results screen simultaneously. The subscription pushes final rankings so clients don't need to re-query.
 
 - [ ] Support **solo games** — only 1 player; host creates and starts the game alone

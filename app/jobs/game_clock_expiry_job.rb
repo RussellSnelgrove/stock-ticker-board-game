@@ -12,6 +12,7 @@ class GameClockExpiryJob < ApplicationJob
     compute_net_worths(game)
     assign_ranks(game)
     game.complete!
+    StockTickerSchema.subscriptions.trigger("gameEnded", { game_id: game.id }, game)
   end
 
   private

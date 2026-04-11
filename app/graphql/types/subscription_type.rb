@@ -3,6 +3,7 @@
 
 module Types
   class SubscriptionType < Types::BaseObject
-    # Subscription fields will be added here as features are built.
+    field :game_ended, subscription: Subscriptions::GameEnded,
+      description: "Fired when a game's clock expires; includes final rankings"
   end
 end

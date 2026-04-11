@@ -10,6 +10,26 @@ class GameClockExpiryJobTest < ActiveSupport::TestCase
     assert_equal "completed", game.reload.status
   end
 
+  test "triggers game_ended subscription" do
+    game = games(:active_game)
+    triggered = []
+    StockTickerSchema.subscriptions.stub(:trigger, ->(event, args, obj) { triggered << { event: event, game: obj } }) do
+      GameClockExpiryJob.new.perform(game.id)
+    end
+    assert_equal 1, triggered.length
+    assert_equal "gameEnded", triggered.first[:event]
+    assert_equal game.id, triggered.first[:game].id
+  end
+
+  test "does not trigger game_ended for a non-in_progress game" do
+    game = games(:waiting_game)
+    triggered = []
+    StockTickerSchema.subscriptions.stub(:trigger, ->(event, args, obj) { triggered << event }) do
+      GameClockExpiryJob.new.perform(game.id)
+    end
+    assert_empty triggered
+  end
+
   test "is a no-op for a game that is not in_progress" do
     game = games(:waiting_game)
     GameClockExpiryJob.new.perform(game.id)
