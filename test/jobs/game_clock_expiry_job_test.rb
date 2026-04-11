@@ -50,6 +50,70 @@ class GameClockExpiryJobTest < ActiveSupport::TestCase
     assert_equal player.cash, player.net_worth
   end
 
+  test "assigns final_rank to all players" do
+    game = games(:active_game)
+    GameClockExpiryJob.new.perform(game.id)
+
+    game.players.each do |player|
+      assert_not_nil player.reload.final_rank
+    end
+  end
+
+  test "higher net worth gets a lower rank number" do
+    game = games(:active_game)
+    GameClockExpiryJob.new.perform(game.id)
+
+    # player_one net_worth=490_000, player_two net_worth=380_000
+    p1 = players(:player_one).reload
+    p2 = players(:player_two).reload
+    assert p1.final_rank < p2.final_rank
+  end
+
+  test "tied players share the same rank" do
+    game = games(:active_game)
+    # Equalise both players' net worth: no transactions, same cash
+    players(:player_one).update_columns(cash: 400_000)
+    players(:player_two).update_columns(cash: 400_000)
+    # Remove existing transactions so portfolio value is 0 for both
+    game.players.each { |p| p.game_transactions.delete_all }
+
+    GameClockExpiryJob.new.perform(game.id)
+
+    p1 = players(:player_one).reload
+    p2 = players(:player_two).reload
+    assert_equal p1.final_rank, p2.final_rank
+  end
+
+  test "earlier turn_position wins the tie but both share the rank number" do
+    game = games(:active_game)
+    players(:player_one).update_columns(cash: 400_000)
+    players(:player_two).update_columns(cash: 400_000)
+    game.players.each { |p| p.game_transactions.delete_all }
+
+    GameClockExpiryJob.new.perform(game.id)
+
+    # Both ranked 1 — turn_position 0 beats turn_position 1 within the tie,
+    # but neither is demoted; they share rank 1.
+    assert_equal 1, players(:player_one).reload.final_rank
+    assert_equal 1, players(:player_two).reload.final_rank
+  end
+
+  test "player after a tie group gets the correct rank" do
+    game = games(:active_game)
+    # player_one and player_two tie; dropped_player has less cash
+    players(:player_one).update_columns(cash: 400_000)
+    players(:player_two).update_columns(cash: 400_000)
+    players(:dropped_player).update_columns(cash: 100_000)
+    game.players.each { |p| p.game_transactions.delete_all }
+
+    GameClockExpiryJob.new.perform(game.id)
+
+    # Two players tied at rank 1 → third player is rank 3 (not rank 2)
+    assert_equal 1, players(:player_one).reload.final_rank
+    assert_equal 1, players(:player_two).reload.final_rank
+    assert_equal 3, players(:dropped_player).reload.final_rank
+  end
+
   test "worthless_reset zeroes out holdings for that stock" do
     game = games(:active_game)
     grain_stock = game_stocks(:grain_in_game_one)

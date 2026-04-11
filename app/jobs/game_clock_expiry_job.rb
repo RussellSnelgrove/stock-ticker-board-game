@@ -10,6 +10,7 @@ class GameClockExpiryJob < ApplicationJob
     return unless game&.in_progress?
 
     compute_net_worths(game)
+    assign_ranks(game)
     game.complete!
   end
 
@@ -23,6 +24,21 @@ class GameClockExpiryJob < ApplicationJob
       holdings = derive_holdings(player, price_by_game_stock_id.keys)
       portfolio_value = holdings.sum { |game_stock_id, qty| qty * price_by_game_stock_id.fetch(game_stock_id, 0) }
       player.update_column(:net_worth, player.cash + portfolio_value)
+    end
+  end
+
+  # Assigns final_rank to each player. Players with equal net_worth share the same rank;
+  # within a tie, earlier turn_position wins (ranks are still shared, not skipped).
+  sig { params(game: Game).void }
+  def assign_ranks(game)
+    players = game.players.reload.sort_by { |p| [ -T.must(p.net_worth), p.turn_position ] }
+
+    rank = 1
+    players.each_with_index do |player, i|
+      if i > 0 && players[i - 1].net_worth != player.net_worth
+        rank = i + 1
+      end
+      player.update_column(:final_rank, rank)
     end
   end
 

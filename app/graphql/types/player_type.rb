@@ -11,5 +11,7 @@ module Types
     field :turn_position, Integer, null: false
     field :net_worth, Integer, null: true,
       description: "Final net worth in cents (cash + portfolio value), set when game ends"
+    field :final_rank, Integer, null: true,
+      description: "Final rank at game end; tied players share the same rank"
   end
 end

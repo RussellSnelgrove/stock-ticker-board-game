@@ -193,7 +193,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [x] Implement game clock expiry — schedule a background job (Active Job) that fires at `ends_at` to freeze all trading, compute final net worth for all players, and set game status to "completed"
   > **Why**: The game must end automatically when the timer runs out — it can't rely on a player action. A background job scheduled at `ends_at` handles this reliably even if all players close their browsers.
 
-- [ ] **Tie-breaking**: when two or more players share the same net worth at expiry, rank them by `turn_position` ascending (earlier joiner wins); surface tied ranks in the results
+- [x] **Tie-breaking**: when two or more players share the same net worth at expiry, rank them by `turn_position` ascending (earlier joiner wins); surface tied ranks in the results
   > **Why**: Provides a deterministic, fair tie-breaking rule. Earlier joiners took more risk by playing longer, so they win ties. The rule is communicated upfront so players understand it.
 
 - [ ] Broadcast a `GameEnded` event when the timer expires with final rankings
