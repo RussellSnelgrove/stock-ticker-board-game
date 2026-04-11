@@ -38,9 +38,9 @@ class GameClockExpiryJob < ApplicationJob
       .each do |txn|
         id = txn.game_stock_id
         case txn.transaction_type
-        when "buy"           then holdings[id] += txn.quantity
-        when "sell"          then holdings[id] -= txn.quantity
-        when "stock_split"   then holdings[id] *= 2
+        when "buy"           then holdings[id] = T.must(holdings[id]) + txn.quantity
+        when "sell"          then holdings[id] = T.must(holdings[id]) - txn.quantity
+        when "stock_split"   then holdings[id] = T.must(holdings[id]) * 2
         when "worthless_reset" then holdings[id] = 0
         end
       end
