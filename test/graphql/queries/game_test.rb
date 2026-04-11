@@ -42,7 +42,7 @@ class GameQueryTest < ActiveSupport::TestCase
     data = result.to_h.dig("data", "game")
     assert_equal game.id.to_s, data["id"]
     assert_equal game.name, data["name"]
-    assert_equal "in_progress", data["status"]
+    assert_equal "IN_PROGRESS", data["status"]
     assert_not_nil data["endsAt"]
     assert_not_nil data["rollsRemainingThisTurn"]
   end
