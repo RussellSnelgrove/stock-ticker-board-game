@@ -1,0 +1,27 @@
+waiting_game_host:
+  user: one
+  game: waiting_game
+  cash: 500000
+  status: active
+  turn_position: 0
+
+player_one:
+  user: one
+  game: active_game
+  cash: 500000
+  status: active
+  turn_position: 0
+
+player_two:
+  user: two
+  game: active_game
+  cash: 380000
+  status: active
+  turn_position: 1
+
+dropped_player:
+  user: three
+  game: active_game
+  cash: 120000
+  status: dropped
+  turn_position: 2

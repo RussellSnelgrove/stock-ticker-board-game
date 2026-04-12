@@ -113,18 +113,18 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 
 ### 4. Build the Stock Ticker data models
 
-- [ ] Create a `User` model with just a `display_name` field (no authentication — users pick a name and play immediately)
+- [x] Create a `User` model with just a `display_name` field (no authentication — users pick a name and play immediately)
   > **Why**: The game has no login — users just pick a name. A lightweight `User` record ties a session to a display name and persists it across page reloads without requiring auth infrastructure.
 
-- [ ] Create a `Stock` model as a static lookup for the 6 commodities in this exact order: Grain, Industrial, Bonds, Oil, Silver, Gold
+- [x] Create a `Stock` model as a static lookup for the 6 commodities in this exact order: Grain, Industrial, Bonds, Oil, Silver, Gold
   > **Why**: The 6 commodities are fixed and universal — they never change between games. A seeded lookup table is the right model for static reference data. Fixed order matters for consistent UI rendering.
 
-- [ ] Create a `GameStock` model (belongs to `Game` and `Stock`) to track each stock's price within a game
+- [x] Create a `GameStock` model (belongs to `Game` and `Stock`) to track each stock's price within a game
   - Fields: `current_price` (stored as integer cents; 100 = $1.00, range 0–200)
   - Each game gets its own set of 6 `GameStock` records initialized at $1.00
   > **Why**: Each game has independent stock prices — a split in one game doesn't affect another. `GameStock` is the join between a game and a commodity that carries the per-game price state. Storing price as integer cents avoids floating-point rounding errors.
 
-- [ ] Create a `Game` model to represent a game session and its state:
+- [x] Create a `Game` model to represent a game session and its state:
   - Fields: `name`, `invite_code` (6-character uppercase alphanumeric, generated via `SecureRandom.alphanumeric(6).upcase`), `host` (belongs to `User`), `status`, `current_turn`, `duration`, `starts_at`, `ends_at`, `remaining_time`
   - Status state machine: `waiting` (lobby, accepting players) -> `in_progress` (clock running) -> `paused` (solo only) -> `completed` (timer expired)
   - Only mutations valid for the current status should be accepted (e.g., no rolling in "waiting", no trading in "completed")
@@ -132,7 +132,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
   - Expose `active_player` as a computed method: `players.active.order(:turn_position).offset(current_turn % active_player_count).first`
   > **Why**: `Game` is the central model everything else belongs to. The status state machine enforces valid transitions and prevents illegal actions (e.g., rolling after the game ends). `rolls_remaining_this_turn` is stored on the server — not tracked client-side — to prevent desync. The invite code lets players join by sharing a short code instead of a long URL.
 
-- [ ] Create a `Player` model linked to a User and a Game
+- [x] Create a `Player` model linked to a User and a Game
   - Fields: `cash` (stored as integer cents; 500_000 = $5,000 starting balance), `status` (active/dropped), `turn_position` (integer, set by join order)
   > **Why**: A `Player` is the join between a `User` and a `Game`, carrying per-game state (cash, turn position, active/dropped). Separating `User` from `Player` allows the same user to play in multiple games simultaneously.
 
@@ -140,66 +140,66 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
   - Fields: `player_id`, `game_stock_id`, `quantity` (integer, multiples of 500)
   > **Why**: Holdings are the core portfolio data. A separate model (rather than embedding in `Player`) lets us query "who holds what" efficiently, which is needed for splits, worthless resets, and dividend payouts.
 
-- [ ] Create a `GameTransaction` model to log all buys, sells, dividends, and splits (use `GameTransaction` not `Transaction` to avoid Rails reserved name)
+- [x] Create a `GameTransaction` model to log all buys, sells, dividends, and splits (use `GameTransaction` not `Transaction` to avoid Rails reserved name)
   - Fields: `player_id`, `game_stock_id`, `transaction_type` (buy/sell/dividend/split/worthless_reset), `quantity`, `price_at_time`, `total_amount`, `turn_number`
   > **Why**: A full audit log of every financial event in the game. Powers the game history view and makes it possible to reconstruct a player's net worth at any point. `Transaction` is a reserved name in Rails/ActiveRecord so we use `GameTransaction`.
 
-- [ ] Create a `DiceRoll` model to record each turn's roll results
+- [x] Create a `DiceRoll` model to record each turn's roll results
   - Fields: `game_id`, `player_id`, `turn_number`, `stock_rolled` (references `Stock`), `direction` (up/down/dividend), `amount` (stored as integer cents; 5 = $0.05, 10 = $0.10, 20 = $0.20)
   > **Why**: Persisting roll results means late-joining players and page refreshes can reconstruct the game log. Also useful for verifying the dice are truly random and for replaying game history.
 
-- [ ] Create a `Message` model for in-game chat
+- [x] Create a `Message` model for in-game chat
   - Fields: `user_id`, `game_id`, `body` (max 200 chars)
   > **Why**: Persisting chat messages means players who reconnect can see recent chat history rather than a blank room. The 200-char limit keeps messages readable.
 
-- [ ] Configure `ApplicationCable::Connection` to authenticate via the Rails session cookie: read `request.session[:user_id]`, look up the `User`, and set `current_user` on the connection (reject connections with no session or unknown user)
+- [x] Configure `ApplicationCable::Connection` to authenticate via the Rails session cookie: read `request.session[:user_id]`, look up the `User`, and set `current_user` on the connection (reject connections with no session or unknown user)
   > **Why**: Action Cable WebSocket connections need to know who is connecting so subscriptions can be scoped to the right game and player. Reading the Rails session cookie (same one used for HTTP requests) avoids duplicating auth logic.
 
-- [ ] Add validations and associations between all models
+- [x] Add validations and associations between all models
   > **Why**: Database-level constraints (via migrations) and model-level validations (via ActiveRecord) together ensure data integrity. Without them, bugs can silently corrupt game state.
 
-- [ ] Add Sorbet type signatures to all models
+- [x] Add Sorbet type signatures to all models
   > **Why**: Models are used everywhere — having typed signatures catches wrong argument types early and documents what each method expects.
 
-- [ ] Define GraphQL types for each model (`GameStockType`, `GameType`, `PlayerType`, `HoldingType`, `GameTransactionType`, `DiceRollType`, `MessageType`)
+- [x] Define GraphQL types for each model (`GameStockType`, `GameType`, `PlayerType`, `HoldingType`, `GameTransactionType`, `DiceRollType`, `MessageType`)
   > **Why**: GraphQL types define the shape of the API — what fields clients can query. Each model needs a corresponding type so the frontend can access its data.
 
-- [ ] Seed the database with the 6 static `Stock` records in order: Grain, Industrial, Bonds, Oil, Silver, Gold
+- [x] Seed the database with the 6 static `Stock` records in order: Grain, Industrial, Bonds, Oil, Silver, Gold
   > **Why**: The 6 commodities must exist before any game can be created. Seeding them in `db/seeds.rb` ensures they're present in every environment (development, test, production) after `db:seed` runs.
 
-- [ ] Write unit tests for all model validations and associations
+- [x] Write unit tests for all model validations and associations
   > **Why**: Models are the foundation of the app. Tests here catch broken validations, missing associations, and constraint violations before they cause runtime errors.
 
 ### 5. Implement game lifecycle
 
-- [ ] Define a `CreateGame` mutation (accepts a `duration` in minutes — **presets only**: 15, 30, 60, or 90; no free-form input — generates a 6-character uppercase alphanumeric invite code via `SecureRandom.alphanumeric(6).upcase`, initializes 6 `GameStock` records at $1.00, sets status to "waiting" — clock does **not** start yet)
+- [x] Define a `CreateGame` mutation (accepts a `duration` in minutes — **presets only**: 15, 30, 60, or 90; no free-form input — generates a 6-character uppercase alphanumeric invite code via `SecureRandom.alphanumeric(6).upcase`, initializes 6 `GameStock` records at $1.00, sets status to "waiting" — clock does **not** start yet)
   > **Why**: Creating a game and starting it are separate actions — the host needs time to share the invite code and wait for players to join before the clock begins. Duration presets match the original board game and prevent edge cases from arbitrary durations.
 
-- [ ] Define a `StartGame` mutation (host-only) to transition the game from "waiting" to "in_progress", compute `ends_at` from the duration, and schedule the game clock expiry job
+- [x] Define a `StartGame` mutation (host-only) to transition the game from "waiting" to "in_progress", compute `ends_at` from the duration, and schedule the game clock expiry job
   > **Why**: Only the host should control when the game starts. `ends_at` is computed at start time (not creation time) so the full duration is available from the moment play begins. The expiry job is scheduled here so it fires at exactly the right time.
 
-- [ ] Define a `JoinGame` mutation to join via invite code (if the player was previously in the game, restore their state; otherwise create a new `Player` record with $5,000 cash and 0 shares)
+- [x] Define a `JoinGame` mutation to join via invite code (if the player was previously in the game, restore their state; otherwise create a new `Player` record with $5,000 cash and 0 shares)
   > **Why**: The invite code is the join mechanism. Restoring state on rejoin means dropped players don't lose their portfolio when they reconnect. New players always start at $5,000 regardless of when they join — mid-game joins are explicitly supported.
 
-- [ ] Define a `LeaveGame` mutation to drop out while preserving state
+- [x] Define a `LeaveGame` mutation to drop out while preserving state
   > **Why**: Players can leave and rejoin without penalty. Preserving state (rather than deleting the player) means their portfolio survives a disconnect or browser close.
 
-- [ ] Add a `games` query to list available and active games
+- [x] Add a `games` query to list available and active games
   > **Why**: Powers the lobby screen where players can see open games to join. Filters to games in `waiting` or `in_progress` status.
 
-- [ ] Add a `game` query to fetch a single game by ID or invite code (includes `ends_at`, remaining time, and `rollsRemainingThisTurn`)
+- [x] Add a `game` query to fetch a single game by ID or invite code (includes `ends_at`, remaining time, and `rollsRemainingThisTurn`)
   > **Why**: The primary query for the game board. The client polls or subscribes to this to keep its state in sync. `rollsRemainingThisTurn` is included to prevent client/server desync on the roll count.
 
-- [ ] Implement game clock expiry — schedule a background job (Active Job) that fires at `ends_at` to freeze all trading, compute final net worth for all players, and set game status to "completed"
+- [x] Implement game clock expiry — schedule a background job (Active Job) that fires at `ends_at` to freeze all trading, compute final net worth for all players, and set game status to "completed"
   > **Why**: The game must end automatically when the timer runs out — it can't rely on a player action. A background job scheduled at `ends_at` handles this reliably even if all players close their browsers.
 
-- [ ] **Tie-breaking**: when two or more players share the same net worth at expiry, rank them by `turn_position` ascending (earlier joiner wins); surface tied ranks in the results
+- [x] **Tie-breaking**: when two or more players share the same net worth at expiry, rank them by `turn_position` ascending (earlier joiner wins); surface tied ranks in the results
   > **Why**: Provides a deterministic, fair tie-breaking rule. Earlier joiners took more risk by playing longer, so they win ties. The rule is communicated upfront so players understand it.
 
-- [ ] Broadcast a `GameEnded` event when the timer expires with final rankings
+- [x] Broadcast a `GameEnded` event when the timer expires with final rankings
   > **Why**: All connected clients need to know the game is over so they can transition to the results screen simultaneously. The subscription pushes final rankings so clients don't need to re-query.
 
-- [ ] Support **solo games** — only 1 player; host creates and starts the game alone
+- [x] Support **solo games** — only 1 player; host creates and starts the game alone
   > **Why**: Solo play lets someone learn the game mechanics or play for fun without needing other players. It also enables pause/resume which only makes sense for a single player.
 
 - [ ] Multiplayer games have **no player limit**

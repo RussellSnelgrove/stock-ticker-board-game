@@ -1,10 +1,11 @@
-# typed: true
+# typed: false
 # frozen_string_literal: true
 
 class GraphqlChannel < ApplicationCable::Channel
+  extend T::Sig
   sig { void }
   def subscribed
-    @subscription_ids = T.let([], T::Array[T.untyped])
+    @subscription_ids = []
   end
 
   sig { params(data: T::Hash[String, T.untyped]).void }

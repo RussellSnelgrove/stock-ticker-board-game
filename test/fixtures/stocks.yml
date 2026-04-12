@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+grain:
+  name: Grain
+
+industrial:
+  name: Industrial
+
+bonds:
+  name: Bonds
+
+oil:
+  name: Oil
+
+silver:
+  name: Silver
+
+gold:
+  name: Gold
