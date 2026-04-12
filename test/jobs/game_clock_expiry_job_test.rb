@@ -17,8 +17,9 @@ class GameClockExpiryJobTest < ActiveSupport::TestCase
       GameClockExpiryJob.new.perform(game.id)
     end
     assert_equal 1, triggered.length
-    assert_equal "gameEnded", triggered.first[:event]
-    assert_equal game.id, triggered.first[:game].id
+    entry = triggered.fetch(0)
+    assert_equal "gameEnded", entry[:event]
+    assert_equal game.id, entry[:game].id
   end
 
   test "does not trigger game_ended for a non-in_progress game" do

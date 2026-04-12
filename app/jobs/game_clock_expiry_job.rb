@@ -32,9 +32,9 @@ class GameClockExpiryJob < ApplicationJob
   # within a tie, earlier turn_position wins (ranks are still shared, not skipped).
   sig { params(game: Game).void }
   def assign_ranks(game)
-    players = game.players.reload.sort_by { |p| [ -T.must(p.net_worth), p.turn_position ] }
+    players = game.players.reload.sort_by { |p| [ -p.net_worth.to_i, p.turn_position ] }
 
-    rank = 1
+    rank = T.let(1, Integer)
     players.each_with_index do |player, i|
       if i > 0 && players[i - 1].net_worth != player.net_worth
         rank = i + 1
