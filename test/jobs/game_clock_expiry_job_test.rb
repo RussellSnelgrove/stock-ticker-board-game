@@ -13,7 +13,9 @@ class GameClockExpiryJobTest < ActiveSupport::TestCase
   test "triggers game_ended subscription" do
     game = games(:active_game)
     triggered = []
-    StockTickerSchema.subscriptions.stub(:trigger, ->(event, args, obj) { triggered << { event: event, game: obj } }) do
+    fake_subscriptions = Object.new
+    fake_subscriptions.define_singleton_method(:trigger) { |event, _args, obj| triggered << { event: event, game: obj } }
+    StockTickerSchema.stub(:subscriptions, fake_subscriptions) do
       GameClockExpiryJob.new.perform(game.id)
     end
     assert_equal 1, triggered.length
@@ -25,7 +27,9 @@ class GameClockExpiryJobTest < ActiveSupport::TestCase
   test "does not trigger game_ended for a non-in_progress game" do
     game = games(:waiting_game)
     triggered = []
-    StockTickerSchema.subscriptions.stub(:trigger, ->(event, args, obj) { triggered << event }) do
+    fake_subscriptions = Object.new
+    fake_subscriptions.define_singleton_method(:trigger) { |event, _args, _obj| triggered << event }
+    StockTickerSchema.stub(:subscriptions, fake_subscriptions) do
       GameClockExpiryJob.new.perform(game.id)
     end
     assert_empty triggered

@@ -1,3 +1,10 @@
+waiting_game_host:
+  user: one
+  game: waiting_game
+  cash: 500000
+  status: active
+  turn_position: 0
+
 player_one:
   user: one
   game: active_game
