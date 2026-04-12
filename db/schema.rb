@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_11_042401) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_11_063636) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -87,6 +87,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_11_042401) do
   create_table "players", force: :cascade do |t|
     t.integer "cash", default: 500000, null: false
     t.datetime "created_at", null: false
+    t.integer "final_rank"
     t.bigint "game_id", null: false
     t.integer "net_worth"
     t.string "status", default: "active", null: false
