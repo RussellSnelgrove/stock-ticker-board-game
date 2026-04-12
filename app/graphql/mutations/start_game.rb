@@ -21,6 +21,10 @@ module Mutations
         return { game: nil, errors: [ "Only the host can start the game" ] }
       end
 
+      if game.players.active.empty?
+        return { game: nil, errors: [ "Cannot start a game with no players" ] }
+      end
+
       game.start!
       GameClockExpiryJob.set(wait_until: game.ends_at).perform_later(game.id)
 

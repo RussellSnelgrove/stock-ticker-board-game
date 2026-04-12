@@ -199,7 +199,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [x] Broadcast a `GameEnded` event when the timer expires with final rankings
   > **Why**: All connected clients need to know the game is over so they can transition to the results screen simultaneously. The subscription pushes final rankings so clients don't need to re-query.
 
-- [ ] Support **solo games** — only 1 player; host creates and starts the game alone
+- [x] Support **solo games** — only 1 player; host creates and starts the game alone
   > **Why**: Solo play lets someone learn the game mechanics or play for fun without needing other players. It also enables pause/resume which only makes sense for a single player.
 
 - [ ] Multiplayer games have **no player limit**

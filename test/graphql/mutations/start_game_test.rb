@@ -86,6 +86,21 @@ class Mutations::StartGameTest < ActiveSupport::TestCase
     assert_includes data["errors"].first, "not found"
   end
 
+  test "cannot start a game with no active players" do
+    game = games(:waiting_game)
+    game.players.delete_all
+
+    result = StockTickerSchema.execute(
+      MUTATION,
+      variables: { gameId: game.id },
+      context: { current_user: users(:one) }
+    )
+
+    data = result.to_h.dig("data", "startGame")
+    assert_nil data["game"]
+    assert_includes data["errors"].first, "no players"
+  end
+
   test "schedules GameClockExpiryJob" do
     game = games(:waiting_game)
 

@@ -17,6 +17,10 @@ class Mutations::CreateGameTest < ActiveSupport::TestCase
             currentPrice
             stock { name }
           }
+          players {
+            turnPosition
+            cash
+          }
         }
         errors
       }
@@ -43,6 +47,11 @@ class Mutations::CreateGameTest < ActiveSupport::TestCase
     assert_equal 6, stocks.length
     assert stocks.all? { |s| s["currentPrice"] == 100 }
     assert_equal Stock::NAMES, stocks.map { |s| s.dig("stock", "name") }
+
+    players = game["players"]
+    assert_equal 1, players.length
+    assert_equal 0, players.first["turnPosition"]
+    assert_equal 500_000, players.first["cash"]
   end
 
   test "returns an error for an invalid duration" do
@@ -79,6 +88,25 @@ class Mutations::CreateGameTest < ActiveSupport::TestCase
     data = result.to_h.dig("data", "createGame")
     assert_nil data["game"]
     assert data["errors"].any?
+  end
+
+  test "host can immediately start after creating without calling JoinGame" do
+    result = StockTickerSchema.execute(
+      MUTATION,
+      variables: { name: "Solo Game", duration: 15 },
+      context: { current_user: users(:one) }
+    )
+    game_id = result.to_h.dig("data", "createGame", "game", "id")
+
+    start_result = StockTickerSchema.execute(
+      <<~GQL,
+        mutation { startGame(input: { gameId: #{game_id} }) { game { status } errors } }
+      GQL
+      context: { current_user: users(:one) }
+    )
+    data = start_result.to_h.dig("data", "startGame")
+    assert_empty data["errors"]
+    assert_equal "IN_PROGRESS", data.dig("game", "status")
   end
 
   test "does not create game_stocks on failure" do

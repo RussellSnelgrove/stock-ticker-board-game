@@ -24,6 +24,7 @@ module Mutations
 
       if game.save
         initialize_game_stocks(game)
+        add_host_as_player(game, current_user)
         { game: game, errors: [] }
       else
         { game: nil, errors: game.errors.full_messages }
@@ -36,6 +37,10 @@ module Mutations
       Stock.all.each do |stock|
         game.game_stocks.create!(stock: stock, current_price: 100)
       end
+    end
+
+    def add_host_as_player(game, user)
+      game.players.create!(user: user, cash: 500_000, turn_position: 0, status: :active)
     end
   end
 end
