@@ -28,7 +28,7 @@ class Mutations::JoinGameTest < ActiveSupport::TestCase
       result = StockTickerSchema.execute(
         MUTATION,
         variables: { inviteCode: "WAIT01" },
-        context: { current_user: users(:one) }
+        context: { current_user: users(:two) }
       )
       assert_empty result.to_h.dig("data", "joinGame", "errors")
     end
@@ -38,14 +38,14 @@ class Mutations::JoinGameTest < ActiveSupport::TestCase
     result = StockTickerSchema.execute(
       MUTATION,
       variables: { inviteCode: "WAIT01" },
-      context: { current_user: users(:one) }
+      context: { current_user: users(:two) }
     )
 
     data = result.to_h.dig("data", "joinGame")
     assert_empty data["errors"]
 
-    # waiting_game has no existing players, so this player gets position 0
-    new_player = data.dig("game", "players").find { |p| p["turnPosition"] == 0 }
+    # waiting_game already has the host at position 0, so this player gets position 1
+    new_player = data.dig("game", "players").find { |p| p["turnPosition"] == 1 }
     assert_not_nil new_player
     assert_equal 500_000, new_player["cash"]
     assert_equal "ACTIVE", new_player["status"]
@@ -56,7 +56,7 @@ class Mutations::JoinGameTest < ActiveSupport::TestCase
       result = StockTickerSchema.execute(
         MUTATION,
         variables: { inviteCode: "wait01" },
-        context: { current_user: users(:one) }
+        context: { current_user: users(:two) }
       )
       assert_empty result.to_h.dig("data", "joinGame", "errors")
     end
