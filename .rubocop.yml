@@ -1,6 +1,14 @@
 # Omakase Ruby styling for Rails
 inherit_gem: { rubocop-rails-omakase: rubocop.yml }
 
+require:
+  - rubocop-sorbet
+
+# Every file must have at least a # typed: strict sigil
+Sorbet/ValidSigil:
+  Enabled: true
+  EnforcedMinimumStrictness: true
+
 # Overwrite or add rules to create your own house style
 #
 # # Use `[a, [b, c]]` not `[ a, [ b, c ] ]`

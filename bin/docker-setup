@@ -1,0 +1,4 @@
+#!/bin/bash
+set -e
+
+bin/rails db:create db:migrate db:seed
