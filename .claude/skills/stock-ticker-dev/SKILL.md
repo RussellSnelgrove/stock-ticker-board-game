@@ -6,6 +6,26 @@ allowed-tools: Read, Grep, Glob, Bash
 
 # Stock Ticker — Project Dev Guide
 
+## Implementation Status
+
+| Section | Status |
+|---------|--------|
+| 1. Docker + Rails scaffold | ✅ Complete |
+| 2. GraphQL setup | ✅ Complete |
+| 3. Sorbet type safety | ✅ Complete |
+| 4. Data models | ⬜ Pending |
+| 5. Game lifecycle mutations | ⬜ Pending |
+| 6. Dice + turn mechanics | ⬜ Pending |
+| 7. Buy/sell trading | ⬜ Pending |
+| 8. Redis caching layer | ⬜ Pending |
+| 9. Client-side design system | ⬜ Pending |
+| 10. Game UI | ⬜ Pending |
+| 11. GraphQL subscriptions | ⬜ Pending |
+| 12. Real-time chat | ⬜ Pending |
+| 13. RULES.md | ⬜ Pending |
+
+---
+
 ## Game Rules & Mechanics
 
 ### Core Setup
@@ -65,6 +85,7 @@ allowed-tools: Read, Grep, Glob, Bash
 | JS | Vanilla JS + `fetch` + importmap (no framework) |
 | Containerization | Colima + Docker CLI + Docker Compose |
 | Types | Sorbet (`sorbet` + `tapioca` gems) |
+| GraphQL Dev UI | `graphiql-rails` gem (development only) |
 
 **Key constraints:**
 - Primary dev method is `docker-compose up` — do NOT assume local services
@@ -73,6 +94,22 @@ allowed-tools: Read, Grep, Glob, Bash
 - Importmap requires **bare specifiers**: `import GameClient from "game_client"` NOT `"./game_client"`. Pin each module in `config/importmap.rb`.
 - Active Job adapter: `:async` in development (runs in-process, no separate worker)
 - No Solid gems: `solid_cache`, `solid_queue`, `solid_cable` are removed
+- Every task that adds infrastructure (database, cache, background jobs) MUST also update `docker-compose.yml`
+
+---
+
+## Known Gotchas
+
+- **PostgreSQL health check**: MUST specify `-d stock_ticker_development`. Without it, `pg_isready` looks for a database named `stock_ticker` (the user), which doesn't exist, and the health check always fails.
+  ```yaml
+  healthcheck:
+    test: ["CMD", "pg_isready", "-U", "stock_ticker", "-d", "stock_ticker_development"]
+  ```
+- **Docker host/WebSocket access**: `config.hosts.clear` and `config.action_cable.disable_request_forgery_protection = true` must be set in `config/environments/development.rb`. Without these, Rails blocks requests from unknown hosts and WebSocket connections from browser origins that don't match the container hostname.
+- **Importmap bare specifiers**: Always `import Foo from "foo"` not `"./foo"`. Each module must be pinned in `config/importmap.rb`.
+- **`Transaction` is a reserved name** in ActiveRecord — use `GameTransaction` instead.
+- **Integer cents everywhere**: Never store prices or cash as floats. All money is integer cents. `100 = $1.00`, `500_000 = $5,000`.
+- **`active_player` is computed**: `players.active.order(:turn_position).offset(current_turn % active_player_count).first` — not stored on the model.
 
 ---
 
@@ -95,7 +132,7 @@ allowed-tools: Read, Grep, Glob, Bash
 - **GameTransaction** — `player_id`, `game_stock_id`, `transaction_type` (buy/sell/dividend/split/worthless_reset), `quantity`, `price_at_time`, `total_amount`, `turn_number`
   - Use `GameTransaction` not `Transaction` (Rails reserved name)
 - **DiceRoll** — `game_id`, `player_id`, `turn_number`, `stock_rolled` (references Stock), `direction` (up/down/dividend), `amount` (cents: 5/10/20)
-- **Message** — `user_id`, `game_id`, `body` (max 200 chars, UTF-8 for emoji)
+- **Message** — `user_id`, `game_id`, `body` (max 200 chars, UTF-8 for emoji — column must be UTF-8, not latin1)
 
 ---
 
@@ -178,6 +215,13 @@ end
 - Background: `#0F172A` | Text: `#E2E8F0`
 - Fonts (Google Fonts): **Inter** (UI text, weights 400–900), **JetBrains Mono** (prices/numbers/dice)
 
+```html
+<link
+  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
+```
+
 ### Stock Colors & Symbols
 | Stock | Symbol | Color |
 |-------|--------|-------|
@@ -198,6 +242,15 @@ end
 
 ### Semantic Colors
 - Up/gain: `#22C55E` | Down/loss: `#EF4444` | Dividend: `#F59E0B` | Split: `#3B82F6` | Crash: `#EF4444`
+- Buy buttons: green tint | Sell buttons: red tint
+
+### Button CSS Classes
+- `btn-primary`: Main CTA (Roll Dice, Start Game, Done Trading). Bold, filled background.
+- `btn-danger`: Destructive action (End Game). Red accent.
+- `btn-ghost`: Secondary action (Add Player, Leave Game). Transparent with border.
+- `btn-small`: Compact variant for header actions.
+- `btn-large`: Full-width variant for primary screen actions.
+- `quick-btn`: Small inline pill-shaped buttons for trading. Subtypes: `quick-buy` (green tint), `quick-sell` (red tint), `quick-max` (italic).
 
 ### Number Formatting
 - **Prices**: `$X.XX` (2 decimal places) — `(cents / 100).toFixed(2)`
@@ -218,11 +271,47 @@ Only one `.screen` visible at a time (toggled via `.active` class). 5 screens:
   display: grid;
   grid-template-columns: 260px 1fr 300px;
   gap: 0;
+  min-height: calc(100vh - 140px);
 }
 ```
 - **Left**: Game Log (last roll dice badges + net worth tracker with change since last roll)
 - **Center**: Stock board (1×6 grid, cards created ONCE via `initStockBoard()`, updated in-place via `renderStockBoard()`) + Dice Area + trade controls inline on cards during trading
 - **Right**: Portfolio panel, Scoreboard, Chat
+
+### Responsive Breakpoints
+- **Desktop (1200px+)**: Three-column layout, 1×6 stock card row
+- **Tablet (768–1199px)**: Single column; game log above board; sidebar below; stock board 3×2
+- **Mobile (<768px)**: Single column; stock board 2×3; chat in slide-out drawer; game log above board
+
+### Stock Board & Trading Details
+- Stock cards are created ONCE and updated in-place — never recreated or reordered (prevents visual jumping)
+- **`stock-change`** shows the change from **the last time that specific stock's price changed** (previous roll that affected it), NOT from $1.00. The client tracks each stock's previous price independently.
+- **Flash animations** on roll affect (600ms): `flash-up` (green glow), `flash-down` (red glow), `flash-dividend` (amber glow). Triggered by adding class → force reflow via `void card.offsetWidth` → remove after timeout.
+- **Trading phase lot presets**: `[1, 5, 10, 25]`. Show only presets the player can afford (buy) or actually owns (sell). Append `"Max(N)"` / `"All(N)"` if the max quantity isn't one of the presets. Show em-dash if none available.
+- Trade controls use **event delegation** on `#stock-board` for click handling.
+
+### Dice Animation
+- **Roll animation**: Add `.rolling` class (CSS shake). 15 ticks at 80ms — random values cycle through. After animation, set final values.
+  - Stock die: commodity symbol in its color
+  - Direction die: `"UP ▲"` / `"DOWN ▼"` / `"DIV ★"` with class `result-up` / `result-down` / `result-dividend`
+  - Amount die: cent value (e.g., `"10¢"`)
+- `rollsRemaining` is always synced from the server's `rollsRemainingThisTurn` field via `syncPhaseFromServer()` after every state update to prevent desync.
+
+### Clock & Timer
+- Countdown updated every second from `game.endsAt`
+- Clock turns red (`.warning` class) under 5 minutes remaining
+- Clock pulses (`.critical` class + CSS `pulse` animation) under 1 minute remaining
+
+### Event Ticker
+- Horizontally scrolling marquee strip; CSS-only animation (`ticker-scroll 30s linear infinite`)
+- Content duplicated (`items + items`) for seamless loop
+- Maximum 50 events stored; most recent 20 displayed
+- Item classes: `.up`, `.down`, `.dividend`, `.split`, `.crash`, `.trade`
+
+### Toast Notifications
+- Types: `split-toast`, `crash-toast`, `dividend-toast`
+- Slide-in animation (`.show` class); auto-dismiss after 2500ms (300ms fade-out)
+- Only one toast displayed at a time
 
 ### Render Cycle (called on every state change)
 1. `initStockBoard()` — creates 6 static card DOM elements once
@@ -237,6 +326,21 @@ Only one `.screen` visible at a time (toggled via `.active` class). 5 screens:
 
 ---
 
+## Task List Workflow
+
+### Marking tasks complete
+When a task is completed, update `stock-ticker-task-list.md` and mark the checkbox as `[x]`.
+
+### Task explanations
+Each task in `stock-ticker-task-list.md` should have a brief explanation underneath it describing **why** the decision was made or why it is needed. When adding new tasks or completing existing ones, ensure the explanation is present. Format:
+
+```markdown
+- [x] Task description
+  > **Why**: Brief explanation of the reasoning or need behind this decision.
+```
+
+---
+
 ## Dev Environment
 
 ### Start (Docker — primary)
@@ -246,6 +350,8 @@ docker-compose up --build
 # First time only:
 docker-compose exec app bin/docker-setup
 ```
+
+App runs at **http://localhost:3000**
 
 ### Common Docker Commands
 ```bash
@@ -257,13 +363,19 @@ docker-compose down -v          # wipe all data
 colima stop
 ```
 
+**Note**: Since `.:/app` is mounted as a volume, Ruby file changes (controllers, models, etc.) are reflected immediately without restarting the container.
+
 ### Local Dev (no Docker)
 ```bash
+# Add to ~/.zshrc for persistence:
 export PATH="/opt/homebrew/opt/ruby/bin:/opt/homebrew/opt/postgresql@16/bin:$PATH"
+
 bundle install
 bin/rails db:create db:migrate db:seed
 bin/rails server
 ```
+
+**Prerequisites (Homebrew)**: `brew install ruby postgresql@16 redis`
 
 ### Tests
 ```bash
@@ -280,10 +392,42 @@ bundle exec rails test                   # Local
 
 ---
 
+## Project Structure
+
+```
+stock-ticker/
+├── app/
+│   ├── channels/        # Action Cable channels (GraphQL subscriptions transport)
+│   ├── controllers/     # GraphqlController, GamesController, SessionsController
+│   ├── graphql/
+│   │   ├── types/       # GameStockType, GameType, PlayerType, etc.
+│   │   ├── mutations/   # BuyShares, SellShares, RollDice, etc.
+│   │   └── subscriptions/ # price updates, chat, turn notifications
+│   ├── models/          # Stock, GameStock, Game, Player, Holding, GameTransaction, DiceRoll, Message, User
+│   ├── services/        # DiceRollingService, TradingService
+│   ├── jobs/            # GameClockExpiryJob
+│   └── views/           # Game board, lobby, chat, and leaderboard UI
+├── config/
+├── db/
+│   ├── migrate/
+│   └── seeds.rb         # Seeds the 6 static Stock commodities
+├── Dockerfile.dev
+├── docker-compose.yml   # App + PostgreSQL + Redis
+├── RULES.md             # Full game rules
+├── stock-ticker-task-list.md
+└── README.md
+```
+
 ## Key Files
 - `db/seeds.rb` — seeds the 6 static Stock records
-- `app/services/DiceRollingService` — core game engine logic
-- `app/jobs/GameClockExpiryJob` — handles game expiry
+- `app/services/dice_rolling_service.rb` — core game engine logic
+- `app/services/trading_service.rb` — buy/sell validation and execution
+- `app/jobs/game_clock_expiry_job.rb` — handles game expiry
+- `app/controllers/graphql_controller.rb` — single `/graphql` endpoint
+- `app/controllers/sessions_controller.rb` — `/join` endpoint; sets `session[:user_id]`
+- `app/controllers/games_controller.rb` — game-related HTTP routes
+- `app/channels/application_cable/connection.rb` — authenticates WebSocket via session cookie
 - `docker-compose.yml` — app + PostgreSQL + Redis
 - `config/importmap.rb` — JS module pins (bare specifiers)
 - `RULES.md` — full game rules document
+- `stock-ticker-task-list.md` — full feature task list with completion status

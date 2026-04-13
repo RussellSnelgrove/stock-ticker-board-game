@@ -1,0 +1,17 @@
+buy_grain:
+  player: player_one
+  game_stock: grain_in_game_one
+  transaction_type: buy
+  quantity: 500
+  price_at_time: 100
+  total_amount: 50000
+  turn_number: 1
+
+sell_industrial:
+  player: player_one
+  game_stock: industrial_in_game_one
+  transaction_type: sell
+  quantity: 500
+  price_at_time: 120
+  total_amount: 60000
+  turn_number: 2
