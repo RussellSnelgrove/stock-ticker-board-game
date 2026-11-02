@@ -79,5 +79,3 @@ Answer (**Provisional**): Option A. The chat panel lists the players who are onl
 **Redis caching of full game state (Task 8).** The leaderboard and lobby listing are cached. Caching the whole game state was not built: GraphQL resolves fields from Active Record objects, so a cached hash would bypass the types, and PostgreSQL serves a single game's reads quickly. Build it only if profiling shows game reads are slow.
 
 **Cash display.** Task 9e formats cash as whole dollars, but dividends can pay cents (500 shares at $1.05 with a 10% dividend pays $52.50). The server keeps exact cents; the client rounds for display.
-
-**Branching.** The README says to branch off `develop`, but `develop` has fallen behind `main`.

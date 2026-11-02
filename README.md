@@ -168,12 +168,8 @@ stock-ticker/
 
 ## Contributing
 
-All work is branched off `develop`. The `main` branch is stable — `develop` merges into `main` periodically after testing.
+`main` is the only long-lived branch. CI runs on every push to `main` and on every pull request.
 
 1. Clone the repository
-2. Checkout the develop branch (`git checkout develop`)
-3. Create a feature branch (`git checkout -b feature/my-feature`)
-4. Commit your changes (`git commit -m "Add my feature"`)
-5. Push to the branch (`git push origin feature/my-feature`)
-6. Open a Pull Request targeting `develop`
-7. After testing, `develop` is merged into `main`
+2. Make small commits directly on `main`, or open a pull request against `main` for anything you want reviewed
+3. Before pushing, run `bin/rails test`, `bin/rails test:system`, and `bin/rubocop`

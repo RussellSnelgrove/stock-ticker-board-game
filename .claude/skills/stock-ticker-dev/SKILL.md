@@ -372,9 +372,9 @@ bundle exec rails test                   # Local
 ---
 
 ## Contributing Workflow
-1. Branch off `develop`: `git checkout develop && git checkout -b feature/my-feature`
-2. PRs target `develop`; `main` is stable/production
-3. `develop` merges into `main` after testing
+1. `main` is the only long-lived branch; commit to it or open PRs against it
+2. CI runs on every push to `main` and every PR
+3. Before pushing, run `bin/rails test`, `bin/rails test:system`, and `bin/rubocop`
 
 ---
 

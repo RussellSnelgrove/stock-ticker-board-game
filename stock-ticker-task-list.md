@@ -22,6 +22,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 
 - [x] Create a develop branch for developing
   > **Why**: Keeps `main` stable and production-ready. All work branches off `develop` so we can test before merging.
+  > **Retired**: `develop` was deleted; work now goes to `main`, and CI runs on every push and PR.
 
 - [x] Install Colima, Docker CLI, and Docker Compose via Homebrew (`brew install colima docker docker-compose`)
   > **Why**: Colima is a lightweight container runtime for macOS that doesn't require Docker Desktop (which has licensing restrictions). It runs containers via a Linux VM.

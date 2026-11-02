@@ -1,12 +1,28 @@
 version: 2
 updates:
+# One weekly PR for minor and patch gem updates, one for security fixes.
+# Major versions still arrive as separate PRs so breaking changes get their own review.
 - package-ecosystem: bundler
   directory: "/"
   schedule:
     interval: weekly
   open-pull-requests-limit: 10
+  groups:
+    gems:
+      applies-to: version-updates
+      update-types:
+      - minor
+      - patch
+    gem-security-fixes:
+      applies-to: security-updates
+      patterns:
+      - "*"
 - package-ecosystem: github-actions
   directory: "/"
   schedule:
     interval: weekly
   open-pull-requests-limit: 10
+  groups:
+    actions:
+      patterns:
+      - "*"
