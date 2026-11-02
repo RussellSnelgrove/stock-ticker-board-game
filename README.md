@@ -129,6 +129,15 @@ docker-compose exec app bin/rails test
 
 # Or locally
 bundle exec rails test
+
+# Browser tests (headless Chrome)
+bin/rails test:system
+```
+
+System tests use Selenium Manager to find a chromedriver. If your machine blocks downloaded binaries, point the tests at an allowed driver and browser:
+
+```bash
+CHROMEDRIVER_PATH=/path/to/chromedriver CHROME_BINARY="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" bin/rails test:system
 ```
 
 ## Project Structure
@@ -137,15 +146,16 @@ bundle exec rails test
 stock-ticker/
 ├── app/
 │   ├── channels/        # Action Cable channels (GraphQL subscriptions transport)
-│   ├── controllers/     # GraphqlController, GamesController, SessionsController
+│   ├── controllers/     # GraphqlController, GamesController (page), SessionsController (pick a name)
 │   ├── graphql/
 │   │   ├── types/       # GraphQL object types (GameStockType, GameType, PlayerType, etc.)
 │   │   ├── mutations/   # GraphQL mutations (BuyShares, SellShares, RollDice, etc.)
 │   │   └── subscriptions/ # GraphQL subscriptions (price updates, chat, turn notifications)
 │   ├── models/          # Stock, GameStock, Game, Player, Holding, GameTransaction, DiceRoll, Message, User
-│   ├── services/        # DiceRollingService, TradingService
+│   ├── services/        # DiceRollingService, TradingService, Leaderboard, GameEvents, Presence
 │   ├── jobs/            # GameClockExpiryJob
-│   └── views/           # Game board, lobby, chat, and leaderboard UI
+│   ├── javascript/      # Vanilla JS client (import map): game_app, board, screens, cable_client, ...
+│   └── views/           # Single page with the five screens (games/index.html.erb)
 ├── config/
 ├── db/
 │   ├── migrate/         # Database migrations

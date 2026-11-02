@@ -8,21 +8,7 @@ allowed-tools: Read, Grep, Glob, Bash
 
 ## Implementation Status
 
-| Section | Status |
-|---------|--------|
-| 1. Docker + Rails scaffold | ✅ Complete |
-| 2. GraphQL setup | ✅ Complete |
-| 3. Sorbet type safety | ✅ Complete |
-| 4. Data models | ⬜ Pending |
-| 5. Game lifecycle mutations | ⬜ Pending |
-| 6. Dice + turn mechanics | ⬜ Pending |
-| 7. Buy/sell trading | ⬜ Pending |
-| 8. Redis caching layer | ⬜ Pending |
-| 9. Client-side design system | ⬜ Pending |
-| 10. Game UI | ⬜ Pending |
-| 11. GraphQL subscriptions | ⬜ Pending |
-| 12. Real-time chat | ⬜ Pending |
-| 13. RULES.md | ⬜ Pending |
+`stock-ticker-task-list.md` is the source of truth: a task is done when its checkbox is `[x]`. Decisions made during the build, and questions still open, are in `OPEN-ISSUES.md`.
 
 ---
 
@@ -109,7 +95,7 @@ allowed-tools: Read, Grep, Glob, Bash
 - **Importmap bare specifiers**: Always `import Foo from "foo"` not `"./foo"`. Each module must be pinned in `config/importmap.rb`.
 - **`Transaction` is a reserved name** in ActiveRecord — use `GameTransaction` instead.
 - **Integer cents everywhere**: Never store prices or cash as floats. All money is integer cents. `100 = $1.00`, `500_000 = $5,000`.
-- **`active_player` is computed**: `players.active.order(:turn_position).offset(current_turn % active_player_count).first` — not stored on the model.
+- **`active_player` is stored** in `games.active_player_id`. `Game#advance_turn!` passes play to the next active player by `turn_position`, wrapping around and skipping dropped players, so joins and drops never change whose turn it is mid-turn. `current_turn` counts completed turns.
 
 ---
 
@@ -124,9 +110,9 @@ allowed-tools: Read, Grep, Glob, Bash
 - **User** — `display_name` only; no authentication
 - **Stock** — static lookup; 6 records seeded in order: Grain, Industrial, Bonds, Oil, Silver, Gold
 - **GameStock** — belongs to `Game` + `Stock`; `current_price` (cents, 0–200); one per stock per game; initialized at 100
-- **Game** — `name`, `invite_code` (6-char uppercase alphanumeric via `SecureRandom.alphanumeric(6).upcase`), `host` (belongs to User), `status`, `current_turn`, `duration`, `starts_at`, `ends_at`, `remaining_time`, `rolls_remaining_this_turn` (default 2)
+- **Game** — `name`, `invite_code` (6-char uppercase alphanumeric via `SecureRandom.alphanumeric(6).upcase`), `host` (belongs to User), `status`, `current_turn`, `duration`, `starts_at`, `ends_at`, `remaining_time`, `rolls_remaining_this_turn` (default 2), `active_player_id`
   - Status state machine: `waiting` → `in_progress` → `paused` (solo only) → `completed`
-  - `active_player`: `players.active.order(:turn_position).offset(current_turn % active_player_count).first`
+  - `active_player` (belongs_to Player, stored): set by `start!`, moved by `advance_turn!`, filled by `assign_turn_if_vacant!` when a player rejoins an unattended game
 - **Player** — `user_id`, `game_id`, `cash` (cents, default 500_000), `status` (active/dropped), `turn_position` (join order)
 - **Holding** — `player_id`, `game_stock_id`, `quantity` (integer, multiples of 500)
 - **GameTransaction** — `player_id`, `game_stock_id`, `transaction_type` (buy/sell/dividend/split/worthless_reset), `quantity`, `price_at_time`, `total_amount`, `turn_number`
@@ -155,7 +141,7 @@ allowed-tools: Read, Grep, Glob, Bash
 | `RollDice` | invokes DiceRollingService; returns roll result + `rollsRemaining`; active player only |
 | `BuyShares` | active player after both rolls; lots of 500; validate cash |
 | `SellShares` | active player after both rolls; lots of 500; validate shares owned |
-| `EndTurn` | requires both rolls done; advances `current_turn`; resets `rolls_remaining_this_turn` to 2 |
+| `EndTurn` | requires both rolls done; passes `active_player` to the next active player; increments `current_turn`; resets `rolls_remaining_this_turn` to 2 |
 | `SendMessage` | post chat message |
 
 ### Subscriptions

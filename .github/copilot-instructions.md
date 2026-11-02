@@ -28,7 +28,7 @@ Short, actionable guidance so an AI agent is productive immediately.
   - Splits: when a `GameStock` reaches $2.00 cap, double holders' shares and reset to $1.00 (no carry-over). See Task 6/7 in `stock-ticker-task-list.md`.
   - Worthless reset: when price hits $0, remove holders and reset to $1.00.
   - Dividends: pay based on Die 3 percent (5/10/20%) and only if price >= $1.00.
-  - Turn order: join order determines `turn_position`; active player computed by offsetting `current_turn` modulo active players (see `OPEN-ISSUES.md` notes for precise formula).
+  - Turn order: join order determines `turn_position`. The active player is stored in `games.active_player_id` and `Game#advance_turn!` moves it to the next active player (see `OPEN-ISSUES.md` Q5a).
 
 - **Files you should read first**:
   - `README.md` — setup, Docker-first workflow, tech stack

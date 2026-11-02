@@ -130,13 +130,14 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
   - Only mutations valid for the current status should be accepted (e.g., no rolling in "waiting", no trading in "completed")
   - Add `rolls_remaining_this_turn` as an integer column (default: `ROLLS_PER_TURN = 2`); decremented by `RollDice`, reset to 2 by `EndTurn`
   - Expose `active_player` as a computed method: `players.active.order(:turn_position).offset(current_turn % active_player_count).first`
+    - **Changed**: `active_player` is now stored as `active_player_id`. The computed formula changed whose turn it was whenever a player joined or left mid-turn. See `OPEN-ISSUES.md` Q5a.
   > **Why**: `Game` is the central model everything else belongs to. The status state machine enforces valid transitions and prevents illegal actions (e.g., rolling after the game ends). `rolls_remaining_this_turn` is stored on the server — not tracked client-side — to prevent desync. The invite code lets players join by sharing a short code instead of a long URL.
 
 - [x] Create a `Player` model linked to a User and a Game
   - Fields: `cash` (stored as integer cents; 500_000 = $5,000 starting balance), `status` (active/dropped), `turn_position` (integer, set by join order)
   > **Why**: A `Player` is the join between a `User` and a `Game`, carrying per-game state (cash, turn position, active/dropped). Separating `User` from `Player` allows the same user to play in multiple games simultaneously.
 
-- [ ] Create a `Holding` model to track shares owned per player per `GameStock`
+- [x] Create a `Holding` model to track shares owned per player per `GameStock`
   - Fields: `player_id`, `game_stock_id`, `quantity` (integer, multiples of 500)
   > **Why**: Holdings are the core portfolio data. A separate model (rather than embedding in `Player`) lets us query "who holds what" efficiently, which is needed for splits, worthless resets, and dividend payouts.
 
@@ -202,141 +203,142 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 - [x] Support **solo games** — only 1 player; host creates and starts the game alone
   > **Why**: Solo play lets someone learn the game mechanics or play for fun without needing other players. It also enables pause/resume which only makes sense for a single player.
 
-- [ ] Multiplayer games have **no player limit**
+- [x] Multiplayer games have **no player limit**
   > **Why**: Matches the original board game's open-ended design. Adding artificial limits would require enforcement logic and reduce flexibility.
 
-- [ ] Turn order is determined by **join order**; mid-game joins are appended to the end of the turn order
+- [x] Turn order is determined by **join order**; mid-game joins are appended to the end of the turn order
   > **Why**: Simple, predictable, and fair. The first player to join goes first. Mid-game joins don't disrupt the existing order — they're appended so current players' turns aren't shifted.
 
-- [ ] Mid-game joins always start with **$5,000 cash and 0 shares** regardless of when they join; they must wait for their turn to trade
+- [x] Mid-game joins always start with **$5,000 cash and 0 shares** regardless of when they join; they must wait for their turn to trade
   > **Why**: Consistent starting conditions regardless of join time. This prevents a strategy of joining late when prices are known. Players must wait for their turn to prevent them from jumping in mid-round.
 
-- [ ] Allow solo players to **pause and resume** a game later via a `PauseGame` mutation (stores `remaining_time` and stops the clock) and a dedicated `ResumeGame` mutation (recomputes `ends_at = Time.current + remaining_time` and reschedules the expiry job)
+- [x] Allow solo players to **pause and resume** a game later via a `PauseGame` mutation (stores `remaining_time` and stops the clock) and a dedicated `ResumeGame` mutation (recomputes `ends_at = Time.current + remaining_time` and reschedules the expiry job)
   > **Why**: Solo games are often played in sessions. Pause/resume lets players save their progress. `remaining_time` is stored so the full remaining duration is preserved across a pause — not just the `ends_at` timestamp.
 
-- [ ] Track player presence (online/offline) within a game using Action Cable connection/disconnect callbacks on `ApplicationCable::Connection`; trigger `PlayerPresenceChanged` on connect and disconnect
+- [x] Track player presence (online/offline) within a game using Action Cable connection/disconnect callbacks on `ApplicationCable::Connection`; trigger `PlayerPresenceChanged` on connect and disconnect
   > **Why**: Shows other players who is currently in the game. Also drives auto-roll behaviour — if the active player drops mid-turn, the server detects the disconnect and auto-rolls on their behalf.
 
-- [ ] Write unit tests for game lifecycle mutations, game clock expiry, and queries
+- [x] Write unit tests for game lifecycle mutations, game clock expiry, and queries
   > **Why**: The game lifecycle has many state transitions and edge cases. Tests ensure `CreateGame`, `StartGame`, `JoinGame`, expiry, and tie-breaking all work correctly under various scenarios.
 
 ### 6. Implement the dice and turn mechanics
 
-- [ ] Build a dice rolling service that produces 3 results per roll (all dice are **uniformly weighted** — each outcome is equally likely):
+- [x] Build a dice rolling service that produces 3 results per roll (all dice are **uniformly weighted** — each outcome is equally likely):
   - **Die 1**: Which stock is affected (1/6 each: Grain, Industrial, Bonds, Oil, Silver, Gold)
   - **Die 2**: Direction (1/3 each: Up, Down, or Dividend)
   - **Die 3**: Amount (1/3 each: $0.05, $0.10 or $0.20 movement)
   > **Why**: Encapsulating dice logic in a service keeps the `RollDice` mutation thin and makes the rolling logic independently testable. Uniform weighting matches the original board game's physical dice.
 
-- [ ] Each player rolls **twice per turn** before trading (ROLLS_PER_TURN = 2). The `RollDice` mutation tracks rolls per turn and returns `rollsRemaining`.
+- [x] Each player rolls **twice per turn** before trading (ROLLS_PER_TURN = 2). The `RollDice` mutation tracks rolls per turn and returns `rollsRemaining`.
   > **Why**: Two rolls per turn is a core rule of the original game. `ROLLS_PER_TURN` is a named constant so the value is defined once and easy to find. Returning `rollsRemaining` from the mutation keeps the client in sync with the server's count.
 
-- [ ] Define a `RollDice` mutation that invokes the dice service and returns the roll result plus `rollsRemaining`
+- [x] Define a `RollDice` mutation that invokes the dice service and returns the roll result plus `rollsRemaining`
   > **Why**: Rolling dice is a player action that must go through the server to be authoritative. The server applies the price change and returns the result — the client never calculates outcomes itself.
 
-- [ ] Apply price changes to the affected `GameStock` after each roll
+- [x] Apply price changes to the affected `GameStock` after each roll
   > **Why**: The market moves immediately after each roll, before the next roll. This is the core game mechanic — all players see the updated prices in real time via subscriptions.
 
-- [ ] Share supply is **unlimited** — players may buy as many shares as they can afford
+- [x] Share supply is **unlimited** — players may buy as many shares as they can afford
   > **Why**: Matches the original board game. There's no share supply cap to track or enforce, which simplifies the model significantly.
 
-- [ ] **Price floor**: $0.00 is the absolute minimum; any roll that would take a stock below $0 triggers the worthless behavior (wipe shares, reset to $1.00)
+- [x] **Price floor**: $0.00 is the absolute minimum; any roll that would take a stock below $0 triggers the worthless behavior (wipe shares, reset to $1.00)
   > **Why**: Prevents negative prices which have no meaning in this game. A stock that hits $0 is treated as worthless — all holders lose their shares and the stock resets, matching the original rules.
 
-- [ ] Handle **stock splits** — when a `GameStock` reaches or exceeds $2.00, cap at $2.00, double all holders' shares, and reset the price to $1.00 (no carry-over of excess amount)
+- [x] Handle **stock splits** — when a `GameStock` reaches or exceeds $2.00, cap at $2.00, double all holders' shares, and reset the price to $1.00 (no carry-over of excess amount)
   > **Why**: The split is the most exciting event in the game — a big payout for holders. Capping at $2.00 (not allowing carry-over) matches the original rules and prevents runaway prices.
 
-- [ ] Handle **worthless stocks** — when a `GameStock` drops to $0, all holders' shares are immediately removed and the stock resets to $1.00; play continues as normal
+- [x] Handle **worthless stocks** — when a `GameStock` drops to $0, all holders' shares are immediately removed and the stock resets to $1.00; play continues as normal
   > **Why**: The crash is the most painful event — holders lose everything. Resetting to $1.00 rather than $0 keeps the stock in play so it can recover. Play continues without interruption.
 
-- [ ] Handle **dividends** — the dividend rate matches Die 3 (5%, 10%, or 20% of the stock's current price per share held); dividends only take effect when the `GameStock` price is $1.00 or higher (rolls below $1.00 have no effect)
+- [x] Handle **dividends** — the dividend rate matches Die 3 (5%, 10%, or 20% of the stock's current price per share held); dividends only take effect when the `GameStock` price is $1.00 or higher (rolls below $1.00 have no effect)
   > **Why**: Dividends reward holders of high-value stocks. The $1.00 floor prevents dividends from paying out on cheap/recovering stocks, matching the original rules.
 
-- [ ] Enforce the classic turn sequence: roll dice twice -> market moves after each roll -> active player may buy/sell -> end turn
+- [x] Enforce the classic turn sequence: roll dice twice -> market moves after each roll -> active player may buy/sell -> end turn
   > **Why**: The server must enforce the sequence — not just document it. Mutations that violate the sequence (e.g., buying before both rolls) must be rejected with an error.
 
-- [ ] Only allow `BuyShares` / `SellShares` mutations from the active player after they have completed both rolls
+- [x] Only allow `BuyShares` / `SellShares` mutations from the active player after they have completed both rolls
   > **Why**: Trading before rolling would let players exploit known prices. The server checks both that the caller is the active player and that both rolls are done before allowing any trade.
 
-- [ ] Define an `EndTurn` mutation that advances play to the next player (requires both rolls completed)
+- [x] Define an `EndTurn` mutation that advances play to the next player (requires both rolls completed)
   > **Why**: Explicitly ending the turn gives players control over when they're done trading. The server validates both rolls are complete before advancing, preventing players from skipping rolls.
 
-- [ ] If the active player drops mid-turn (between roll 1 and roll 2), auto-roll the remaining roll(s) on their behalf using `DiceRollingService`, then advance to the next player; dropped players are skipped entirely on subsequent turns
+- [x] If the active player drops mid-turn (between roll 1 and roll 2), auto-roll the remaining roll(s) on their behalf using `DiceRollingService`, then advance to the next player; dropped players are skipped entirely on subsequent turns
   > **Why**: A dropped player shouldn't block the game indefinitely. Auto-rolling completes the market movement so the game continues. Skipping dropped players on subsequent turns keeps pace of play up.
 
-- [ ] Write unit tests for the `RollDice` mutation, turn sequence enforcement, price changes, splits, worthless stocks, and dividends
+- [x] Write unit tests for the `RollDice` mutation, turn sequence enforcement, price changes, splits, worthless stocks, and dividends
   > **Why**: The dice mechanics are the core of the game. Tests for each special event (split, crash, dividend) ensure edge cases are handled correctly and regressions are caught.
 
 ### 7. Implement buying and selling
 
-- [ ] Define a `BuyShares` mutation to purchase shares at the `GameStock`'s current price (only allowed for the active player after completing both rolls)
+- [x] Define a `BuyShares` mutation to purchase shares at the `GameStock`'s current price (only allowed for the active player after completing both rolls)
   > **Why**: Buying is the primary way players build their portfolio. Server-side validation of player identity, turn state, and cash balance prevents invalid trades.
 
-- [ ] Define a `SellShares` mutation to sell shares at the `GameStock`'s current price (only allowed for the active player after completing both rolls)
+- [x] Define a `SellShares` mutation to sell shares at the `GameStock`'s current price (only allowed for the active player after completing both rolls)
   > **Why**: Selling lets players lock in gains or cut losses. Same server-side validation as buying plus a check that the player actually owns the shares they're trying to sell.
 
-- [ ] Validate sufficient cash for purchases (return GraphQL user errors on failure)
+- [x] Validate sufficient cash for purchases (return GraphQL user errors on failure)
   > **Why**: Prevents players from going into debt. Returns a user-facing error (not a server error) so the UI can display it cleanly.
 
-- [ ] Validate sufficient shares for sales (return GraphQL user errors on failure)
+- [x] Validate sufficient shares for sales (return GraphQL user errors on failure)
   > **Why**: Prevents selling shares that aren't owned (short selling is not part of this game). Returns a user-facing error so the UI can display it cleanly.
 
-- [ ] Shares are bought/sold in lots of 500 shares
+- [x] Shares are bought/sold in lots of 500 shares
   > **Why**: Matches the original board game. Lot-based trading simplifies the UI (fewer buttons, no free-form quantity input) and keeps the numbers meaningful.
 
-- [ ] A player may make multiple buy/sell transactions before ending their turn
+- [x] A player may make multiple buy/sell transactions before ending their turn
   > **Why**: Allows complex trading strategies within a single turn — e.g., selling one stock and buying another. Matches the original board game's trading phase.
 
-- [ ] Update player cash and holdings after each transaction
+- [x] Update player cash and holdings after each transaction
   > **Why**: Cash and holdings must be updated immediately and atomically so the next transaction sees the correct balances. This prevents double-spending.
 
-- [ ] Log all transactions for game history
+- [x] Log all transactions for game history
   > **Why**: Every trade is recorded in `GameTransaction` for the game log and final results screen. The audit trail also helps debug any balance discrepancies.
 
-- [ ] Add a `transactions` query to fetch game history with pagination
+- [x] Add a `transactions` query to fetch game history with pagination
   > **Why**: The full transaction history could be very long in a 90-minute game. Pagination prevents loading thousands of records at once.
 
-- [ ] Write unit tests for buy/sell mutations, validation errors, and edge cases
+- [x] Write unit tests for buy/sell mutations, validation errors, and edge cases
   > **Why**: Trading is the most financially sensitive part of the app. Tests verify correct cash deduction, holding updates, insufficient funds errors, and edge cases like buying the exact amount of cash remaining.
 
 ### 8. Add Redis caching layer
 
-- [ ] Configure Redis as the Rails cache store (in addition to its existing role for Action Cable)
+- [x] Configure Redis as the Rails cache store (in addition to its existing role for Action Cable)
   > **Why**: Redis is already in our stack for Action Cable. Using it for caching too means we get fast in-memory reads for frequently accessed data without adding another service.
 
 - [ ] Cache active game state (stock prices, player holdings, turn info) in Redis
   > **Why**: Game state is read on every subscription update and page load. Caching it in Redis avoids repeated database queries for hot data, keeping response times low during active play.
+  > **Not built**: GraphQL resolves fields from Active Record objects, so a cached hash would bypass the types, and PostgreSQL serves one game's reads quickly. The leaderboard and lobby listing are cached instead. See `OPEN-ISSUES.md`.
 
-- [ ] Implement write-through caching so game state is persisted to the database on each mutation
+- [x] Implement write-through caching so game state is persisted to the database on each mutation
   > **Why**: Redis is not durable — a restart loses all data. Write-through caching ensures every mutation persists to PostgreSQL while Redis serves reads. The database is always the source of truth.
 
-- [ ] Invalidate cache on critical events (game over, player join/leave)
+- [x] Invalidate cache on critical events (game over, player join/leave)
   > **Why**: Stale cache is worse than no cache. Game over, joins, and leaves change the shape of the cached data significantly enough that a full invalidation is safer than partial updates.
 
-- [ ] Use caching for the leaderboard and game listings
+- [x] Use caching for the leaderboard and game listings
   > **Why**: The leaderboard and game list are read by all connected clients frequently. Caching these reduces database load as the number of concurrent games grows.
 
-- [ ] Write tests to verify cache read/write and persistence
+- [x] Write tests to verify cache read/write and persistence
   > **Why**: Cache bugs are subtle — data appears correct until the cache is cold or invalidated. Tests that explicitly test cache hits, misses, and invalidation prevent silent data staleness.
 
 ### 9. Set up the client-side design system
 
 #### 9a. Tooling
 
-- [ ] Use vanilla JS with `fetch` for GraphQL queries/mutations and importmap for module loading. IMPORTANT: importmap requires bare specifiers in imports (`import GameClient from "game_client"`), NOT relative paths (`"./game_client"`). Pin each module in `config/importmap.rb`.
+- [x] Use vanilla JS with `fetch` for GraphQL queries/mutations and importmap for module loading. IMPORTANT: importmap requires bare specifiers in imports (`import GameClient from "game_client"`), NOT relative paths (`"./game_client"`). Pin each module in `config/importmap.rb`.
   > **Why**: No JavaScript framework needed for this app — the UI is relatively simple and the real-time complexity is handled by GraphQL subscriptions. Vanilla JS with importmap avoids a build step (no webpack/esbuild) which keeps the dev environment simple and the Docker image lean.
 
-- [ ] Set up the Action Cable JavaScript client for receiving GraphQL subscriptions
+- [x] Set up the Action Cable JavaScript client for receiving GraphQL subscriptions
   > **Why**: GraphQL subscriptions are delivered over WebSockets via Action Cable. The JS client must establish and maintain the WebSocket connection and route incoming subscription data to the correct handlers.
 
-- [ ] Write a proof-of-concept that fetches data from the `/graphql` endpoint and receives a subscription update in the browser
+- [x] Write a proof-of-concept that fetches data from the `/graphql` endpoint and receives a subscription update in the browser
   > **Why**: Validates the full stack — Rails, GraphQL, Action Cable, Redis, and the JS client — are all wired together correctly before building real features on top.
 
 #### 9b. Theme and design language
 
 Dark theme with a financial terminal aesthetic. Dark gray background (`#0F172A`), bright accent colors, high-contrast text (`#E2E8F0`).
 
-- [ ] Load fonts from Google Fonts in the layout `<head>`:
+- [x] Load fonts from Google Fonts in the layout `<head>`:
   - **Primary**: Inter (weights: 400, 500, 600, 700, 800, 900) — all UI text
   - **Monospace**: JetBrains Mono (weights: 400, 500, 600, 700) — prices, numbers, dice values
 
@@ -347,10 +349,11 @@ Dark theme with a financial terminal aesthetic. Dark gray background (`#0F172A`)
 />
 ```
   > **Why**: Inter is a clean, highly-readable UI font. JetBrains Mono is a developer-focused monospace font that makes numbers and prices easier to scan at a glance — critical for a financial game.
+  > **Deviation**: The fonts are self-hosted in `app/assets/fonts` instead of loaded from Google Fonts. Google Fonts serves different CSS per browser, so the stylesheet cannot carry a Subresource Integrity hash, which the project's security rules require for external stylesheets.
 
 #### 9c. Color palette
 
-- [ ] Implement stock colors as constants (each commodity has a fixed color throughout):
+- [x] Implement stock colors as constants (each commodity has a fixed color throughout):
 
 | Stock      | Symbol | Color   |
 | ---------- | ------ | ------- |
@@ -361,7 +364,7 @@ Dark theme with a financial terminal aesthetic. Dark gray background (`#0F172A`)
 | Silver     | SLVR   | #94A3B8 |
 | Gold       | GOLD   | #F59E0B |
 
-- [ ] Implement player colors (assigned by join order, cycle if more than 4):
+- [x] Implement player colors (assigned by join order, cycle if more than 4):
 
 | Position | Color   |
 | -------- | ------- |
@@ -370,14 +373,14 @@ Dark theme with a financial terminal aesthetic. Dark gray background (`#0F172A`)
 | 3        | #22C55E |
 | 4        | #F59E0B |
 
-- [ ] Implement semantic colors:
+- [x] Implement semantic colors:
   - Up/gain: `#22C55E` | Down/loss: `#EF4444` | Dividend: `#F59E0B` | Split: `#3B82F6` | Crash: `#EF4444` (brighter flash)
   - Buy buttons: green tint | Sell buttons: red tint
   > **Why**: Fixed colors per stock mean players build a visual association between color and commodity quickly. Semantic colors (green = good, red = bad) leverage universal financial UI conventions so the meaning is immediately obvious.
 
 #### 9d. Button styles
 
-- [ ] Create button CSS classes:
+- [x] Create button CSS classes:
   - `btn-primary`: Main CTA (Roll Dice, Start Game, Done Trading). Bold, filled background.
   - `btn-danger`: Destructive action (End Game). Red accent.
   - `btn-ghost`: Secondary action (Add Player, Leave Game). Transparent with border.
@@ -388,7 +391,7 @@ Dark theme with a financial terminal aesthetic. Dark gray background (`#0F172A`)
 
 #### 9e. Number formatting
 
-- [ ] Implement consistent formatting helpers:
+- [x] Implement consistent formatting helpers:
   - **Prices** (stock prices, amounts): `$X.XX`, always 2 decimal places. Stored as integer cents. Display via `(cents / 100).toFixed(2)`.
   - **Money** (cash, net worth, costs): `$X,XXX` with thousand separators, no decimals. Use `toLocaleString('en-US')`.
   - **Shares**: Thousand separators (e.g., "1,500 shares").
@@ -402,40 +405,40 @@ The app uses a screen-switching pattern. Only one `.screen` is visible at a time
 
 No authentication — users pick a name and play immediately. (This is the app's actual entry point; replaces the old local pass-and-play setup screen from the original prototype.)
 
-- [ ] Centered card layout with the app logo (SVG bar chart: 4 colored bars — green, blue, amber, red)
-- [ ] Title "Stock Ticker" with gradient text (`linear-gradient(135deg, #F59E0B, #EF4444)`)
-- [ ] Single text input for display name (placeholder: "Your name", maxlength: 20, autofocus)
-- [ ] "Play" button submits a POST to `/join` which creates/finds a `User` and stores `user_id` in the Rails session
-- [ ] On success, redirects to the lobby (home screen)
-- [ ] CSS class: `username-form`
+- [x] Centered card layout with the app logo (SVG bar chart: 4 colored bars — green, blue, amber, red)
+- [x] Title "Stock Ticker" with gradient text (`linear-gradient(135deg, #F59E0B, #EF4444)`)
+- [x] Single text input for display name (placeholder: "Your name", maxlength: 20, autofocus)
+- [x] "Play" button submits a POST to `/join` which creates/finds a `User` and stores `user_id` in the Rails session
+- [x] On success, redirects to the lobby (home screen)
+- [x] CSS class: `username-form`
   > **Why**: The entry point must be as frictionless as possible — no signup, no password. A single name input and one button gets players into the game in seconds. The session cookie ties their name to their browser for the rest of the session.
 
 #### 10b. Screen: Home / Game Lobby
 
 Shown after entering a username. Centered card layout.
 
-- [ ] App logo and title (reuse from username screen)
-- [ ] Subtitle: "Playing as **[display_name]**"
-- [ ] **Create Game form**: game name input (maxlength: 30), duration select (15/30/60/90 min), "Create Game" button. Calls `CreateGame` mutation.
-- [ ] **Join by Code form**: text input (maxlength: 6, uppercase monospace, letter-spacing), "Join" button. Calls `JoinGame` mutation.
-- [ ] **Open Games list**: rows showing game name, player count, duration, host name, and a "Join" button. Populated via `games` GraphQL query.
-- [ ] If no open games: "No open games yet. Create one!" message.
-- [ ] CSS classes: `setup-container`, `lobby-actions`, `create-game-form`, `join-game-form`, `game-list-section`, `game-list`, `game-list-item`, `game-list-empty`
+- [x] App logo and title (reuse from username screen)
+- [x] Subtitle: "Playing as **[display_name]**"
+- [x] **Create Game form**: game name input (maxlength: 30), duration select (15/30/60/90 min), "Create Game" button. Calls `CreateGame` mutation.
+- [x] **Join by Code form**: text input (maxlength: 6, uppercase monospace, letter-spacing), "Join" button. Calls `JoinGame` mutation.
+- [x] **Open Games list**: rows showing game name, player count, duration, host name, and a "Join" button. Populated via `games` GraphQL query.
+- [x] If no open games: "No open games yet. Create one!" message.
+- [x] CSS classes: `setup-container`, `lobby-actions`, `create-game-form`, `join-game-form`, `game-list-section`, `game-list`, `game-list-item`, `game-list-empty`
   > **Why**: The lobby gives players two ways to join — by browsing open games or entering a code shared by a friend. Both paths lead to the same `JoinGame` mutation. The open games list enables discovery for players who don't have a code.
 
 #### 10c. Screen: Waiting Room
 
 Shown after creating or joining a game in "waiting" status. Centered card layout.
 
-- [ ] Game name as heading
-- [ ] Invite code displayed prominently (large monospace text `invite-code-value`, with "Copy" button using `navigator.clipboard.writeText`)
-- [ ] Duration badge (e.g., "60 min")
-- [ ] Player list in join order: numbered 1, 2, 3... with a colored dot using their player color. Host labeled "(host)".
-- [ ] "Start Game" button: only visible to the host, large primary button. Calls `StartGame` mutation.
-- [ ] "Leave Game" button for non-host players. Calls `LeaveGame` mutation.
-- [ ] Subscribe to `PlayerPresenceChanged` to update the player list in real time.
-- [ ] On `GameStarted` subscription event, transition all clients to the game screen.
-- [ ] CSS classes: `invite-code-display`, `invite-code-label`, `invite-code-value`, `duration-badge`, `waiting-player-list`, `waiting-player-item`, `waiting-player-dot`, `waiting-player-number`, `waiting-player-name`, `waiting-player-host`
+- [x] Game name as heading
+- [x] Invite code displayed prominently (large monospace text `invite-code-value`, with "Copy" button using `navigator.clipboard.writeText`)
+- [x] Duration badge (e.g., "60 min")
+- [x] Player list in join order: numbered 1, 2, 3... with a colored dot using their player color. Host labeled "(host)".
+- [x] "Start Game" button: only visible to the host, large primary button. Calls `StartGame` mutation.
+- [x] "Leave Game" button for non-host players. Calls `LeaveGame` mutation.
+- [x] Subscribe to `PlayerPresenceChanged` to update the player list in real time.
+- [x] On `GameStarted` subscription event, transition all clients to the game screen.
+- [x] CSS classes: `invite-code-display`, `invite-code-label`, `invite-code-value`, `duration-badge`, `waiting-player-list`, `waiting-player-item`, `waiting-player-dot`, `waiting-player-number`, `waiting-player-name`, `waiting-player-host`
   > **Why**: The waiting room is where players gather before the game starts. The prominent invite code with a copy button makes it easy to share. Real-time player list updates via subscription mean everyone sees who has joined without refreshing.
 
 #### 10d. Screen: Game Board
@@ -455,42 +458,42 @@ The core gameplay screen. Uses a **three-column layout**: Game Log (left, 260px)
 
 ##### Game Header
 
-- [ ] Top bar with: game title (gradient text), turn number badge (`round-badge`), countdown timer (`clock-badge`), pause button (solo only)
-- [ ] Clock turns red (`warning` class) under 5 min, pulses (`critical` class + CSS `pulse` animation) under 1 min
-- [ ] Update clock every second from `game.endsAt`
+- [x] Top bar with: game title (gradient text), turn number badge (`round-badge`), countdown timer (`clock-badge`), pause button (solo only)
+- [x] Clock turns red (`warning` class) under 5 min, pulses (`critical` class + CSS `pulse` animation) under 1 min
+- [x] Update clock every second from `game.endsAt`
   > **Why**: The countdown timer is one of the most important UI elements — it drives urgency and informs trading decisions. Visual urgency cues (red, pulse) at 5 min and 1 min give players clear warnings before the game ends.
 
 ##### Event Ticker
 
-- [ ] Horizontally scrolling marquee strip below the header
-- [ ] Event items colored by type: `.up` (green), `.down` (red), `.dividend` (amber), `.split` (blue), `.crash` (red bold), `.trade` (neutral)
-- [ ] Content duplicated (`items + items`) for seamless CSS animation loop (`ticker-scroll 30s linear infinite`)
-- [ ] Maximum 50 events stored, most recent 20 displayed
+- [x] Horizontally scrolling marquee strip below the header
+- [x] Event items colored by type: `.up` (green), `.down` (red), `.dividend` (amber), `.split` (blue), `.crash` (red bold), `.trade` (neutral)
+- [x] Content duplicated (`items + items`) for seamless CSS animation loop (`ticker-scroll 30s linear infinite`)
+- [x] Maximum 50 events stored, most recent 20 displayed
   > **Why**: The ticker gives the game a live financial market feel. Players who aren't currently rolling can follow the action. The CSS-only animation is performant and doesn't require JS timers.
 
 ##### Phase Banner
 
-- [ ] Full-width colored bar below the event ticker
-- [ ] Rolling phase: blue tint (`phase-rolling`), shows "Roll 1 of 2" or "Roll 2 of 2" + active player name in their color
-- [ ] Trading phase: green tint (`phase-trading`), shows "Buy & Sell" + active player name
-- [ ] When not your turn: shows whose turn it is
+- [x] Full-width colored bar below the event ticker
+- [x] Rolling phase: blue tint (`phase-rolling`), shows "Roll 1 of 2" or "Roll 2 of 2" + active player name in their color
+- [x] Trading phase: green tint (`phase-trading`), shows "Buy & Sell" + active player name
+- [x] When not your turn: shows whose turn it is
   > **Why**: In multiplayer, players need to know at a glance whose turn it is and what phase the game is in. The phase banner is always visible and uses colour to communicate state without requiring players to read carefully.
 
 ##### Game Log (left sidebar)
 
-- [ ] **Last roll section**: Three dice values as small colored badges — stock symbol in its commodity color, direction colored green/red/amber (`die-up`, `die-down`, `die-dividend`), amount in neutral. Below: outcome message colored by event type.
-- [ ] **Net worth tracker**: All players ranked by net worth descending. Each entry shows:
+- [x] **Last roll section**: Three dice values as small colored badges — stock symbol in its commodity color, direction colored green/red/amber (`die-up`, `die-down`, `die-dividend`), amount in neutral. Below: outcome message colored by event type.
+- [x] **Net worth tracker**: All players ranked by net worth descending. Each entry shows:
   - Player name (in their player color if it's you)
   - Current net worth in monospace (`nw-current`)
   - Change since last roll: green `+$X` (`nw-change positive`), red `-$X` (`nw-change negative`), gray dash (`nw-change neutral`)
   - Colored bar below proportional to max net worth (`nw-bar`)
-- [ ] Client MUST snapshot all players' net worth before each roll, then show the diff after
-- [ ] CSS classes: `game-log`, `log-panel`, `last-roll`, `last-roll-result`, `last-roll-dice`, `last-roll-die`, `last-roll-message`, `net-worth-tracker`, `nw-entry`, `nw-name`, `nw-values`, `nw-current`, `nw-change`, `nw-bar`
+- [x] Client MUST snapshot all players' net worth before each roll, then show the diff after
+- [x] CSS classes: `game-log`, `log-panel`, `last-roll`, `last-roll-result`, `last-roll-dice`, `last-roll-die`, `last-roll-message`, `net-worth-tracker`, `nw-entry`, `nw-name`, `nw-values`, `nw-current`, `nw-change`, `nw-bar`
   > **Why**: The game log serves two purposes: it shows what just happened (last roll) and how everyone is doing (net worth tracker). The per-roll net worth delta is important — players need to see the immediate impact of each roll, not just the cumulative total.
 
 ##### Stock Board (center)
 
-- [ ] 1x6 horizontal grid of **static** stock cards in fixed order: Grain, Industrial, Bonds, Oil, Silver, Gold
+- [x] 1x6 horizontal grid of **static** stock cards in fixed order: Grain, Industrial, Bonds, Oil, Silver, Gold
 
 ```css
 .stock-board {
@@ -500,83 +503,83 @@ The core gameplay screen. Uses a **three-column layout**: Game Log (left, 260px)
 }
 ```
 
-- [ ] Cards are created ONCE via `initStockBoard()` when entering the game. DOM positions NEVER change. Only text content (price, change) is updated in place via `renderStockBoard()`. This prevents cards from jumping or reordering.
-- [ ] Each card contains: `.stock-name` (in stock color), `.stock-price` (monospace), `.stock-change`, `.stock-card-trade-slot` (empty container for trade controls)
-- [ ] `stock-change` shows the change from the **last time this stock's price changed** (previous roll that affected it), NOT overall from $1.00. Client tracks each stock's previous price.
-- [ ] **Flash animations**: When a stock is affected by a roll, the card flashes for 600ms:
+- [x] Cards are created ONCE via `initStockBoard()` when entering the game. DOM positions NEVER change. Only text content (price, change) is updated in place via `renderStockBoard()`. This prevents cards from jumping or reordering.
+- [x] Each card contains: `.stock-name` (in stock color), `.stock-price` (monospace), `.stock-change`, `.stock-card-trade-slot` (empty container for trade controls)
+- [x] `stock-change` shows the change from the **last time this stock's price changed** (previous roll that affected it), NOT overall from $1.00. Client tracks each stock's previous price.
+- [x] **Flash animations**: When a stock is affected by a roll, the card flashes for 600ms:
   - `flash-up`: green glow | `flash-down`: red glow | `flash-dividend`: amber glow
   - Triggered by adding class, forcing reflow (`void card.offsetWidth`), then removing after timeout
   > **Why**: Fixed card positions mean players build spatial memory of where each stock is. Cards created once and updated in-place (never recreated) prevents visual jumping. Flash animations draw the eye to the affected stock without requiring players to scan all 6 cards.
 
 ##### Trading Phase (inline on stock cards)
 
-- [ ] When `rollsRemaining` reaches 0, each card gains `.trading` class and the `.stock-card-trade-slot` is populated with buy/sell controls. Cards animate taller (CSS transition on `max-height`).
-- [ ] Trade controls per card: holdings info (`trade-holdings`), buy row, sell row
-- [ ] Quick lot buttons: presets `[1, 5, 10, 25]`. Show only presets the player can afford (buy) or owns (sell). Add "Max(N)" / "All(N)" if the max isn't a preset. Show em-dash if none available.
-- [ ] Buttons use event delegation on `#stock-board` for click handling
-- [ ] "Done Trading" button in a separate `trade-actions` container below the board. Calls `EndTurn` mutation.
-- [ ] When not your turn or during rolling: cards show market data only, no trade controls.
+- [x] When `rollsRemaining` reaches 0, each card gains `.trading` class and the `.stock-card-trade-slot` is populated with buy/sell controls. Cards animate taller (CSS transition on `max-height`).
+- [x] Trade controls per card: holdings info (`trade-holdings`), buy row, sell row
+- [x] Quick lot buttons: presets `[1, 5, 10, 25]`. Show only presets the player can afford (buy) or owns (sell). Add "Max(N)" / "All(N)" if the max isn't a preset. Show em-dash if none available.
+- [x] Buttons use event delegation on `#stock-board` for click handling
+- [x] "Done Trading" button in a separate `trade-actions` container below the board. Calls `EndTurn` mutation.
+- [x] When not your turn or during rolling: cards show market data only, no trade controls.
   > **Why**: Inline trade controls on the stock cards keep the interaction close to the data — players can see the price and buy/sell in the same place. Preset lot buttons (rather than a text input) are faster to tap and match the lot-based trading model. Showing only affordable/owned presets prevents invalid trades before they happen.
 
 ##### Dice Area (center, below stock board)
 
-- [ ] Visible during rolling phase, hidden during trading
-- [ ] Three dice: Stock (`.die#die-stock`), Action (`.die#die-direction`), Amount (`.die#die-amount`). Each has a `.die-label` and `.die-value`.
-- [ ] **Roll animation**: Add `.rolling` class (CSS shake). 15 ticks at 80ms — random values cycle. After animation, set final values:
+- [x] Visible during rolling phase, hidden during trading
+- [x] Three dice: Stock (`.die#die-stock`), Action (`.die#die-direction`), Amount (`.die#die-amount`). Each has a `.die-label` and `.die-value`.
+- [x] **Roll animation**: Add `.rolling` class (CSS shake). 15 ticks at 80ms — random values cycle. After animation, set final values:
   - Stock die: commodity symbol, border color = stock color
   - Direction die: "UP ▲" / "DOWN ▼" / "DIV ★" with `result-up` / `result-down` / `result-dividend` class
   - Amount die: cent value (e.g., "10¢")
-- [ ] Dice message below: describes outcome, colored by type
-- [ ] Roll button text: "Roll Dice (1 of 2)" → "Roll Dice (2 of 2)". After roll 2, dice area hides.
-- [ ] `rollsRemaining` synced from server via `rollsRemainingThisTurn` field to prevent desync. Client calls `syncPhaseFromServer()` after every game state update.
+- [x] Dice message below: describes outcome, colored by type
+- [x] Roll button text: "Roll Dice (1 of 2)" → "Roll Dice (2 of 2)". After roll 2, dice area hides.
+- [x] `rollsRemaining` synced from server via `rollsRemainingThisTurn` field to prevent desync. Client calls `syncPhaseFromServer()` after every game state update.
   > **Why**: The dice animation creates anticipation — it's the most exciting moment of each turn. 15 ticks at 80ms is fast enough to feel like rolling without being annoying. Syncing `rollsRemaining` from the server prevents the client from getting out of step if a message is missed.
 
 ##### Right Sidebar: Your Portfolio
 
-- [ ] Panel with border color = your player color
-- [ ] Header: your name + phase label ("Rolling (1/2)", "Trading", "Watching")
-- [ ] Stats: Cash (green), Net Worth — in `stat-box` containers
-- [ ] Holdings list: stock symbol (in color), share count, current value. "No stocks held" if empty.
+- [x] Panel with border color = your player color
+- [x] Header: your name + phase label ("Rolling (1/2)", "Trading", "Watching")
+- [x] Stats: Cash (green), Net Worth — in `stat-box` containers
+- [x] Holdings list: stock symbol (in color), share count, current value. "No stocks held" if empty.
   > **Why**: Players need to see their own financial state at all times — cash balance determines what they can buy, and current holdings determine what they can sell. The phase label reminds them what they should be doing right now.
 
 ##### Right Sidebar: Scoreboard
 
-- [ ] All players ranked by net worth descending
-- [ ] Each entry: rank number, player name (active player highlighted with `.active` class in their color), net worth in monospace
-- [ ] Bar chart: width proportional to max net worth, colored by player color
-- [ ] In multiplayer: online/offline dot next to each name
+- [x] All players ranked by net worth descending
+- [x] Each entry: rank number, player name (active player highlighted with `.active` class in their color), net worth in monospace
+- [x] Bar chart: width proportional to max net worth, colored by player color
+- [x] In multiplayer: online/offline dot next to each name
   > **Why**: The scoreboard creates competitive tension — players can see exactly how far ahead or behind they are. The bar chart makes relative standings visually obvious at a glance. The online/offline indicator shows who is still active in the game.
 
 ##### Right Sidebar: Chat
 
-- [ ] Message list (scroll, newest at bottom, auto-scroll on new)
-- [ ] Author name in player color + message text
-- [ ] Input field (maxlength: 200) + "Send" button. Enter key also sends.
-- [ ] Sends via `SendMessage` mutation. Receives via `MessageReceived` subscription.
+- [x] Message list (scroll, newest at bottom, auto-scroll on new)
+- [x] Author name in player color + message text
+- [x] Input field (maxlength: 200) + "Send" button. Enter key also sends.
+- [x] Sends via `SendMessage` mutation. Receives via `MessageReceived` subscription.
   > **Why**: Chat adds a social layer to the game. Player names in their color make it easy to identify who said what at a glance. Auto-scroll keeps the latest messages visible without user interaction.
 
 ##### Toast Notifications
 
-- [ ] Floating notification for splits, crashes, dividends
-- [ ] Created dynamically, appended to `<body>`. Types: `split-toast`, `crash-toast`, `dividend-toast`.
-- [ ] Slide-in animation (`.show` class), auto-dismiss after 2500ms (300ms fade-out).
-- [ ] Only one toast at a time.
+- [x] Floating notification for splits, crashes, dividends
+- [x] Created dynamically, appended to `<body>`. Types: `split-toast`, `crash-toast`, `dividend-toast`.
+- [x] Slide-in animation (`.show` class), auto-dismiss after 2500ms (300ms fade-out).
+- [x] Only one toast at a time.
   > **Why**: Splits, crashes, and large dividends are significant events that deserve prominent callouts — not just a line in the ticker. Toasts appear on top of the UI and auto-dismiss so they don't require player interaction but still grab attention.
 
 #### 10e. Screen: Game Over / Results
 
-- [ ] Trophy emoji, "Game Over" heading
-- [ ] Players sorted by final net worth descending; ties broken by `turn_position` ascending (earlier joiner ranks higher). Rank 1/2/3 use medal emojis, rank 4+ numeric.
-- [ ] Each entry: player name (in their color), profit/loss amount and percentage vs. starting $5,000, final net worth.
-- [ ] "Play Again" button (returns to lobby). In multiplayer, also "Back to Lobby".
-- [ ] Triggered by `GameEnded` subscription.
+- [x] Trophy emoji, "Game Over" heading
+- [x] Players sorted by final net worth descending; ties broken by `turn_position` ascending (earlier joiner ranks higher). Rank 1/2/3 use medal emojis, rank 4+ numeric.
+- [x] Each entry: player name (in their color), profit/loss amount and percentage vs. starting $5,000, final net worth.
+- [x] "Play Again" button (returns to lobby). In multiplayer, also "Back to Lobby".
+- [x] Triggered by `GameEnded` subscription.
   > **Why**: The results screen gives players closure and a clear winner. Profit/loss vs. starting $5,000 shows each player how well they did in absolute terms, not just relative to others. Medal emojis for top 3 add personality. "Play Again" reduces friction for a second game.
 
 #### 10f. Responsive layout
 
-- [ ] **Desktop (1200px+)**: Three-column layout. 1x6 stock card row.
-- [ ] **Tablet (768-1199px)**: Single column. Game log above board. Sidebar below. Stock board 3x2 grid.
-- [ ] **Mobile (<768px)**: Single column. Stock board 2x3 grid. Chat in slide-out drawer. Game log above board.
+- [x] **Desktop (1200px+)**: Three-column layout. 1x6 stock card row.
+- [x] **Tablet (768-1199px)**: Single column. Game log above board. Sidebar below. Stock board 3x2 grid.
+- [x] **Mobile (<768px)**: Single column. Stock board 2x3 grid. Chat in slide-out drawer. Game log above board.
   > **Why**: The game is primarily a desktop experience but should be playable on tablets. Mobile is a stretch goal — the three-column layout doesn't fit on small screens so the layout reflows. Chat moves to a drawer on mobile to save vertical space.
 
 #### 10g. Render cycle
@@ -596,72 +599,72 @@ The `render()` function calls all of these on every state change:
 
 ### 11. Add real-time updates with GraphQL subscriptions
 
-- [ ] Define a `GameStarted` subscription to notify players in the lobby that the host has started the game
+- [x] Define a `GameStarted` subscription to notify players in the lobby that the host has started the game
   > **Why**: Players in the waiting room need to transition to the game board the moment the host starts the game — they can't be expected to manually refresh.
 
-- [ ] Define a `GameStockPriceUpdated` subscription to push per-game price changes to all players in that game
+- [x] Define a `GameStockPriceUpdated` subscription to push per-game price changes to all players in that game
   > **Why**: All players must see price changes immediately after each roll, not just the active player. This is the primary subscription driving the live market board.
 
-- [ ] Define a `DiceRolled` subscription to broadcast roll results in real time
+- [x] Define a `DiceRolled` subscription to broadcast roll results in real time
   > **Why**: Non-active players need to see the dice roll result and animation play out on their screen, not just the price change. This keeps all players engaged even when it's not their turn.
 
-- [ ] Define a `LeaderboardUpdated` subscription to push net worth changes
+- [x] Define a `LeaderboardUpdated` subscription to push net worth changes
   > **Why**: After every price change and trade, all players' net worths change. Pushing updates to all clients keeps the scoreboard and net worth tracker live.
 
-- [ ] Define a `TurnChanged` subscription to notify players when it's their turn
+- [x] Define a `TurnChanged` subscription to notify players when it's their turn
   > **Why**: Players need a clear signal when it becomes their turn so they know to take action. This also updates the phase banner and active player indicator for all clients.
 
-- [ ] Define a `PlayerPresenceChanged` subscription for join/leave/rejoin events
+- [x] Define a `PlayerPresenceChanged` subscription for join/leave/rejoin events
   > **Why**: All players in a game should see when someone joins, leaves, or reconnects. Drives the player list in the waiting room and the online/offline dot in the scoreboard.
 
-- [ ] Define a `GameEnded` subscription to notify all players when the game clock expires (includes final rankings)
+- [x] Define a `GameEnded` subscription to notify all players when the game clock expires (includes final rankings)
   > **Why**: When the timer hits zero, all clients need to simultaneously transition to the results screen. The subscription includes final rankings so clients don't need to make a separate query.
 
-- [ ] Configure Action Cable as the transport layer for GraphQL subscriptions
+- [x] Configure Action Cable as the transport layer for GraphQL subscriptions
   > **Why**: Action Cable is Rails' built-in WebSocket framework. Using it as the transport for GraphQL subscriptions means we don't need a separate WebSocket server — the same Puma process handles both HTTP and WebSocket connections.
 
-- [ ] Write integration tests for subscription delivery
+- [x] Write integration tests for subscription delivery
   > **Why**: Subscriptions are harder to test than queries/mutations because they're asynchronous. Integration tests verify that the right events are delivered to the right subscribers in the right order.
 
 ### 12. Add a real-time chat room
 
-- [ ] Define a `SendMessage` GraphQL mutation to post chat messages
+- [x] Define a `SendMessage` GraphQL mutation to post chat messages
   > **Why**: Going through GraphQL (rather than a separate Action Cable channel) keeps all real-time communication in one place and benefits from GraphQL's validation and error handling.
 
-- [ ] Define a `MessageReceived` GraphQL subscription for real-time message delivery
+- [x] Define a `MessageReceived` GraphQL subscription for real-time message delivery
   > **Why**: Pushes new messages to all players in the game instantly. Scoped to the game so players only receive messages from their current game.
 
-- [ ] Build a chat room UI in the right sidebar within the game view
+- [x] Build a chat room UI in the right sidebar within the game view
   > **Why**: Chat is a secondary feature — it lives in the sidebar rather than taking up prime space on the game board. Keeping it always visible (on desktop) means players can glance at it without switching screens.
 
-- [ ] Emoji support via native browser emoji only — no custom picker; ensure the chat input and message rendering handle Unicode emoji correctly (UTF-8 column, no stripping)
+- [x] Emoji support via native browser emoji only — no custom picker; ensure the chat input and message rendering handle Unicode emoji correctly (UTF-8 column, no stripping)
   > **Why**: Native emoji (from the OS keyboard) covers the use case without adding a third-party emoji picker library. The database column must be UTF-8 (not latin1) to store emoji without corruption.
 
-- [ ] Display active players in the chat
+- [x] Display active players in the chat
   > **Why**: Knowing who is currently in the game helps players direct messages appropriately and know if anyone is watching.
 
-- [ ] Write tests for the mutation, subscription, and message delivery
+- [x] Write tests for the mutation, subscription, and message delivery
   > **Why**: Chat is simple but the subscription delivery path (mutation → broadcast → subscriber) has several moving parts that can silently fail without tests.
 
 ### 13. Write the game rules document
 
-- [ ] Create a `RULES.md` file with full game rules and how to play
+- [x] Create a `RULES.md` file with full game rules and how to play
   > **Why**: New players need a reference document to understand the game before playing. In-game tooltips alone aren't enough for first-time players.
 
-- [ ] Include commodity descriptions and starting prices
+- [x] Include commodity descriptions and starting prices
   > **Why**: Players may not know what each commodity represents or why they start at $1.00. Brief descriptions add context and personality.
 
-- [ ] Document dice mechanics (3-die system, outcomes, 2 rolls per turn)
+- [x] Document dice mechanics (3-die system, outcomes, 2 rolls per turn)
   > **Why**: The dice system is the core mechanic and needs clear documentation — especially the fact that each die is independent and uniformly weighted.
 
-- [ ] Explain stock splits, worthless stocks, and dividends
+- [x] Explain stock splits, worthless stocks, and dividends
   > **Why**: These are the three special events that dramatically change the game state. Players need to understand them before they happen to make informed trading decisions.
 
-- [ ] Cover buying/selling rules and lot sizes
+- [x] Cover buying/selling rules and lot sizes
   > **Why**: The lot-based trading model (multiples of 500) is different from what players might expect. Clear documentation prevents confusion during the trading phase.
 
-- [ ] Describe game types (solo vs. multiplayer)
+- [x] Describe game types (solo vs. multiplayer)
   > **Why**: Solo and multiplayer have different features (pause/resume, player limit, turn dynamics). Players choosing a game mode should know what to expect.
 
-- [ ] Add win conditions and scoring
+- [x] Add win conditions and scoring
   > **Why**: Players need to know how to win — highest net worth at timer expiry, with tie-breaking by join order. This should be stated clearly so there are no disputes at the end.

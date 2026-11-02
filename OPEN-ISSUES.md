@@ -1,6 +1,6 @@
 # Open Issues
 
-Questions to resolve before or during development
+Design questions and how the code answers them. Entries marked **Provisional** were decided during the build-out without the owner's input; change them if you disagree.
 
 ---
 
@@ -8,64 +8,76 @@ Questions to resolve before or during development
 
 **Q1: Should `GameTransaction.price_at_time` and `total_amount` be stored as integer cents, consistent with `GameStock.current_price` and `Player.cash`?**
 
-Answer:
+Answer: Yes. Every money column is integer cents.
 
 ---
 
 **Q2: What type should `Game.duration` and `Game.remaining_time` use?**
-- Option A: Integer seconds (e.g., 3600 = 60 min). Consistent with Ruby's `Time` arithmetic.
-- Option B: Integer minutes (e.g., 60 = 60 min). Simpler for duration presets; `remaining_time` would also be minutes.
 
-Answer:
+Answer: `duration` is integer minutes (the presets 15, 30, 60, 90). `remaining_time` is integer seconds, set only while a game is paused.
 
 ---
 
 **Q3: Should `Game.status` and `Player.status` be stored as Rails enums (integer-backed) or string columns?**
-- Option A: Rails enum (integer-backed) — more efficient, enum helpers generated automatically.
-- Option B: String column — more readable in the database, easier to debug.
 
-Answer:
+Answer: String columns behind Rails enums (`enum :status, { waiting: "waiting", ... }`). The database stays readable and the enum helpers still exist.
 
 ---
 
 ## Game Lifecycle
 
 **Q4: What should happen if a solo player calls `JoinGame` on their own paused game?**
-`JoinGame` currently "restores state" for previously-joined players. If the game is paused, should `JoinGame`:
-- Option A: Return an error telling the player to use `ResumeGame` instead.
-- Option B: Silently succeed (restore state, do NOT resume the clock — player must then call `ResumeGame`).
 
-Answer:
+Answer (**Provisional**): Option B. `JoinGame` restores the player and leaves the clock stopped; the player resumes with `ResumeGame`. Other users cannot join a paused game.
+
+---
+
+**Q4a: What makes a game "solo"?**
+
+Answer (**Provisional**): A game with exactly one player record. Only solo games can be paused. Anyone with the invite code can still join an unpaused solo game, which then becomes multiplayer and can no longer be paused.
 
 ---
 
 ## Dice and Turn Mechanics
 
 **Q5: What triggers the auto-roll when the active player drops mid-turn?**
-The task says to auto-roll remaining rolls on behalf of a dropped active player. Should this be triggered:
-- Option A: Inline inside the `LeaveGame` mutation — if the leaving player is the active player and `rolls_remaining_this_turn > 0`, auto-roll immediately.
-- Option B: As a separate background job that detects the condition and fires.
 
-Answer:
+Answer (**Provisional**): Option A. `LeaveGame` makes the remaining rolls inline, marks the player dropped, and passes the turn. A WebSocket disconnect only marks the player offline; it does not count as leaving, so a page reload never forfeits a turn.
+
+---
+
+**Q5a: How is the active player tracked?**
+
+Answer (**Provisional**): `Game.active_player_id` stores it. The original formula, `players.active.order(:turn_position).offset(current_turn % active_player_count)`, changed whose turn it was whenever a player joined, left, or rejoined mid-turn. `EndTurn` now passes play to the next active player by `turn_position`, wrapping around and skipping dropped players. `current_turn` counts completed turns.
+
+---
+
+**Q5b: Are quick-trade presets `[1, 5, 10, 25]` shares or lots?**
+
+Answer (**Provisional**): Lots of 500 shares. The `BuyShares` and `SellShares` mutations take a share `quantity` that must be a positive multiple of 500.
 
 ---
 
 ## Real-time Subscriptions
 
 **Q6: How should `PlayerPresenceChanged` know which game to broadcast to on disconnect?**
-Action Cable disconnect fires on the connection object, not a channel. The connection needs to know which game the player was in. Should this be:
-- Option A: Store `game_id` on the connection object when the player subscribes to the game channel; use it on disconnect.
-- Option B: Look up the player's active game from the database on disconnect.
 
-Answer:
+Answer (**Provisional**): Option B. On connect and disconnect, `Presence.update` finds the user's players in every game that is not completed, flips `players.online`, and triggers `PlayerPresenceChanged` for each game. A user with two tabs open goes offline when either tab closes.
 
 ---
 
 ## Chat
 
 **Q7: What does "display active players in the chat" mean?**
-- Option A: A persistent list of currently-online players shown in the chat sidebar.
-- Option B: System messages in the message feed (e.g., "Russell joined the game").
-- Option C: Both.
 
-Answer:
+Answer (**Provisional**): Option A. The chat panel lists the players who are online.
+
+---
+
+## Still open
+
+**Redis caching of full game state (Task 8).** The leaderboard and lobby listing are cached. Caching the whole game state was not built: GraphQL resolves fields from Active Record objects, so a cached hash would bypass the types, and PostgreSQL serves a single game's reads quickly. Build it only if profiling shows game reads are slow.
+
+**Cash display.** Task 9e formats cash as whole dollars, but dividends can pay cents (500 shares at $1.05 with a 10% dividend pays $52.50). The server keeps exact cents; the client rounds for display.
+
+**Branching.** The README says to branch off `develop`, but `develop` has fallen behind `main`.
