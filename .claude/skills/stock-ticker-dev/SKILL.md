@@ -62,7 +62,7 @@ allowed-tools: Read, Grep, Glob, Bash
 | Component | Technology |
 |-----------|-----------|
 | Framework | Ruby on Rails 8.1.2 |
-| Ruby | 3.3.7 (pinned in `Dockerfile.dev` and `Gemfile`) |
+| Ruby | 4.0.9 (pinned in `.ruby-version` and `Dockerfile.dev`) |
 | API | GraphQL (`graphql-ruby`) |
 | Database | PostgreSQL (Yugabyte-compatible for production) |
 | Caching/Real-time | Redis (cache store + Action Cable + GraphQL subscriptions) |

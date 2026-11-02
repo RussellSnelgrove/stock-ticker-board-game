@@ -38,6 +38,7 @@ Players buy and sell shares in 6 commodities: **Grain, Industrial, Bonds, Oil, S
 
 - [x] Install Rails 8.1.2 on Ruby 3.3.7: `gem install rails -v 8.1.2` (pin these exact versions in `Dockerfile.dev` and `Gemfile`)
   > **Why**: Pinning exact versions ensures reproducible builds. Anyone building the image at any time gets the same Rails and Ruby versions we developed against.
+  > **Upgraded**: Now Ruby 4.0.9 (`.ruby-version`, `Dockerfile.dev`) and Rails 8.1.4.
 
 - [x] Bootstrap sequence: write `Dockerfile.dev` and `docker-compose.yml` on the host first → `docker-compose build` → `docker-compose run --rm app rails new . --database=postgresql --force` to scaffold Rails into the current directory inside the container
   > **Why**: Solves the chicken-and-egg problem — you can't run `rails new` locally if you don't have Ruby installed, but you can't build a Docker image without a Gemfile. Writing the Docker files first lets the container generate the Rails scaffold.

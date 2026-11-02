@@ -126,6 +126,6 @@ These caused bugs during the first build. Check for them in code review:
 ## Setup & workflow (from README)
 
 - **Docker (primary)**: `colima start --cpu 4 --memory 6 --vm-type vz --vz-rosetta` then `docker-compose up --build`. First time: `docker-compose exec app bin/docker-setup`. App at `http://localhost:3000`.
-- **Local (no Docker)**: Ruby 3.3+, PostgreSQL 16, Redis. `bundle install`, `bin/rails db:create db:migrate db:seed`, `bin/rails server`. Set PATH for Homebrew Ruby/PostgreSQL.
+- **Local (no Docker)**: Ruby 4.0.9 (`.ruby-version`), PostgreSQL 16, Redis. `bundle install`, `bin/rails db:create db:migrate db:seed`, `bin/rails server`. Set PATH for Homebrew Ruby/PostgreSQL.
 - **Tests**: In Docker `make test` (a bare `docker-compose exec app bin/rails test` uses the development database); locally `bundle exec rails test`.
 - **Branching**: `main` is the only long-lived branch; commit to it or open PRs against it. CI runs on every push and PR.

@@ -101,7 +101,7 @@ For developers who cannot run containers (e.g., Docker/Podman blocked by device 
 
 **Prerequisites**:
 
-- Ruby 3.3+ (via Homebrew: `brew install ruby`)
+- Ruby 4.0.9, the version in `.ruby-version` (via Homebrew: `brew install ruby`)
 - PostgreSQL (`brew install postgresql@16 && brew services start postgresql@16`)
 - Redis (`brew install redis && brew services start redis`)
 
