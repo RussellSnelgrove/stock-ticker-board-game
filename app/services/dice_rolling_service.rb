@@ -20,10 +20,11 @@ class DiceRollingService
   # Each die is uniformly weighted.
   sig { params(random: Random).returns(Dice) }
   def self.throw_dice(random = Random.new)
+    # Array#sample(random:) is typed as returning an element or an array; indexing is not.
     Dice.new(
-      stock_name: T.must(Stock::NAMES.sample(random: random)),
-      direction: T.must(DIRECTIONS.sample(random: random)),
-      amount: T.must(DiceRoll::VALID_AMOUNTS.sample(random: random))
+      stock_name: Stock::NAMES.fetch(random.rand(Stock::NAMES.size)),
+      direction: DIRECTIONS.fetch(random.rand(DIRECTIONS.size)),
+      amount: DiceRoll::VALID_AMOUNTS.fetch(random.rand(DiceRoll::VALID_AMOUNTS.size))
     )
   end
 

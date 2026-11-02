@@ -12,7 +12,7 @@ class CachingTest < ActiveSupport::TestCase
   teardown { Rails.cache = @original_cache }
 
   def ranked_names(game)
-    Leaderboard.ranked_players(game).map { |p| p.user.display_name }
+    Leaderboard.ranked_players(game).map { |p| T.must(p.user).display_name }
   end
 
   test "the leaderboard is served from the cache until net worth changes" do

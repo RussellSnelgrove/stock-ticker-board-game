@@ -52,7 +52,7 @@ class DiceRollingServiceTest < ActiveSupport::TestCase
     assert_equal "split", result.outcome
     assert_equal 100, result.new_price
     assert_equal 3000, holding.reload.quantity
-    split = GameTransaction.stock_split.last
+    split = T.must(GameTransaction.stock_split.last)
     assert_equal 1500, split.quantity
     assert_equal 0, split.total_amount
   end
@@ -72,7 +72,7 @@ class DiceRollingServiceTest < ActiveSupport::TestCase
     assert_equal 100, result.new_price
     assert_not Holding.exists?(holding.id)
     assert_equal cash_before, players(:player_one).reload.cash
-    assert_equal 2000, GameTransaction.worthless_reset.last.quantity
+    assert_equal 2000, T.must(GameTransaction.worthless_reset.last).quantity
   end
 
   test "falling to exactly $0.00 is worthless" do
@@ -87,7 +87,7 @@ class DiceRollingServiceTest < ActiveSupport::TestCase
     assert_equal "dividend", result.outcome
     assert_equal 500_000 + 10_000, players(:player_one).reload.cash
     assert_equal 100, game_stocks(:grain_in_game_one).reload.current_price
-    assert_equal 10_000, GameTransaction.dividend.last.total_amount
+    assert_equal 10_000, T.must(GameTransaction.dividend.last).total_amount
   end
 
   test "a dividend below $1.00 pays nothing" do

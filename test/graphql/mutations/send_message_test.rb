@@ -23,7 +23,7 @@ class Mutations::SendMessageTest < ActiveSupport::TestCase
 
     assert_empty data["errors"]
     assert_equal "Buying gold 🚀📈", data.dig("message", "body")
-    assert_equal "Buying gold 🚀📈", Message.last.reload.body
+    assert_equal "Buying gold 🚀📈", T.must(Message.last).reload.body
   end
 
   test "messages over 200 characters are rejected" do

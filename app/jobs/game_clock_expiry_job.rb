@@ -36,7 +36,7 @@ class GameClockExpiryJob < ApplicationJob
 
     rank = T.let(1, Integer)
     players.each_with_index do |player, i|
-      if i > 0 && T.must(players[i - 1]).net_worth != player.net_worth
+      if i > 0 && players[i - 1].net_worth != player.net_worth
         rank = i + 1
       end
       player.update_column(:final_rank, rank)

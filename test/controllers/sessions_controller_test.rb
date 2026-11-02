@@ -9,7 +9,7 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
       post join_path, params: { display_name: "  Russell  " }
     end
     assert_redirected_to root_path
-    assert_equal "Russell", User.last.display_name
+    assert_equal "Russell", T.must(User.last).display_name
 
     get root_path
     assert_select "meta[name=current-user-name][content=Russell]"
