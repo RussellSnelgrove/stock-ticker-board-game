@@ -1,0 +1,156 @@
+<% if @current_user %>
+  <% content_for :head do %>
+    <meta name="current-user-id" content="<%= @current_user.id %>">
+    <meta name="current-user-name" content="<%= @current_user.display_name %>">
+  <% end %>
+<% end %>
+
+<main id="app">
+  <%# 10a. Username entry %>
+  <section id="screen-username" class="screen <%= "active" unless @current_user %>">
+    <div class="setup-container card">
+      <%= render "logo" %>
+      <p class="subtitle">Trade Grain, Industrial, Bonds, Oil, Silver, and Gold. Highest net worth when the clock runs out wins.</p>
+      <% if flash[:alert] %><p class="form-error" role="alert"><%= flash[:alert] %></p><% end %>
+      <%= form_with url: join_path, class: "username-form", local: true do %>
+        <label class="visually-hidden" for="display_name">Your name</label>
+        <input id="display_name" name="display_name" type="text" placeholder="Your name" maxlength="20" required autofocus autocomplete="nickname">
+        <button type="submit" class="btn btn-primary btn-large">Play</button>
+      <% end %>
+    </div>
+  </section>
+
+  <% if @current_user %>
+    <%# 10b. Home / lobby %>
+    <section id="screen-lobby" class="screen">
+      <div class="setup-container card">
+        <%= render "logo" %>
+        <p class="subtitle">Playing as <strong><%= @current_user.display_name %></strong></p>
+        <%= button_to "Change name", logout_path, method: :delete, class: "link-button", form_class: "change-name-form" %>
+
+        <div class="lobby-actions">
+          <form class="create-game-form" id="create-game-form">
+            <h2>Create a game</h2>
+            <input name="name" type="text" placeholder="Game name" maxlength="30" required>
+            <div class="form-row">
+              <select name="duration" aria-label="Duration">
+                <option value="15">15 min</option>
+                <option value="30">30 min</option>
+                <option value="60" selected>60 min</option>
+                <option value="90">90 min</option>
+              </select>
+              <button type="submit" class="btn btn-primary">Create Game</button>
+            </div>
+          </form>
+
+          <form class="join-game-form" id="join-game-form">
+            <h2>Join by code</h2>
+            <div class="form-row">
+              <input name="inviteCode" type="text" class="code-input" placeholder="ABC123" maxlength="6" required autocomplete="off">
+              <button type="submit" class="btn btn-ghost">Join</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="game-list-section">
+          <h2>Open games</h2>
+          <ul class="game-list" id="game-list"></ul>
+        </div>
+      </div>
+    </section>
+
+    <%# 10c. Waiting room %>
+    <section id="screen-waiting" class="screen">
+      <div class="setup-container card">
+        <h1 class="title" id="waiting-game-name"></h1>
+        <div class="invite-code-display">
+          <span class="invite-code-label">Invite code</span>
+          <span class="invite-code-value" id="invite-code-value"></span>
+          <button type="button" class="btn btn-ghost btn-small" id="copy-invite-code">Copy</button>
+        </div>
+        <span class="duration-badge" id="duration-badge"></span>
+        <ol class="waiting-player-list" id="waiting-player-list"></ol>
+        <button type="button" class="btn btn-primary btn-large" id="start-game" hidden>Start Game</button>
+        <button type="button" class="btn btn-ghost" id="leave-waiting">Leave Game</button>
+      </div>
+    </section>
+
+    <%# 10d. Game board %>
+    <section id="screen-game" class="screen">
+      <header class="game-header">
+        <h1 class="title" id="game-title"></h1>
+        <div class="header-badges">
+          <span class="round-badge" id="round-badge"></span>
+          <span class="clock-badge" id="clock-badge">--:--</span>
+          <button type="button" class="btn btn-ghost btn-small" id="pause-game" hidden>Pause</button>
+          <button type="button" class="btn btn-ghost btn-small" id="leave-game">Leave Game</button>
+        </div>
+      </header>
+      <div class="event-ticker" aria-live="off"><div class="ticker-track" id="ticker-track"></div></div>
+      <div class="phase-banner" id="phase-banner"></div>
+
+      <div class="game-layout">
+        <aside class="game-log">
+          <div class="log-panel last-roll">
+            <h2>Last roll</h2>
+            <div class="last-roll-result" id="last-roll-result">
+              <div class="last-roll-dice" id="last-roll-dice"></div>
+              <p class="last-roll-message" id="last-roll-message">No rolls yet</p>
+            </div>
+          </div>
+          <div class="log-panel net-worth-tracker">
+            <h2>Net worth</h2>
+            <div id="net-worth-tracker"></div>
+          </div>
+        </aside>
+
+        <div class="board-column">
+          <div class="stock-board" id="stock-board"></div>
+          <div class="trade-actions" id="trade-actions" hidden>
+            <button type="button" class="btn btn-primary btn-large" id="done-trading">Done Trading</button>
+          </div>
+          <div class="dice-area" id="dice-area">
+            <div class="dice">
+              <div class="die" id="die-stock"><span class="die-label">Stock</span><span class="die-value">?</span></div>
+              <div class="die" id="die-direction"><span class="die-label">Action</span><span class="die-value">?</span></div>
+              <div class="die" id="die-amount"><span class="die-label">Amount</span><span class="die-value">?</span></div>
+            </div>
+            <p class="dice-message" id="dice-message"></p>
+            <button type="button" class="btn btn-primary btn-large" id="roll-dice">Roll Dice (1 of 2)</button>
+          </div>
+        </div>
+
+        <aside class="sidebar">
+          <div class="panel player-panel" id="player-panel"></div>
+          <div class="panel scoreboard">
+            <h2>Scoreboard</h2>
+            <ol class="scoreboard-list" id="scoreboard"></ol>
+          </div>
+          <div class="panel chat" id="chat-panel">
+            <button type="button" class="chat-toggle" id="chat-toggle">Chat</button>
+            <h2>Chat</h2>
+            <div class="chat-online" id="chat-online"></div>
+            <ul class="chat-messages" id="chat-messages"></ul>
+            <form class="chat-form" id="chat-form">
+              <input name="body" type="text" maxlength="200" placeholder="Say something" autocomplete="off" aria-label="Message">
+              <button type="submit" class="btn btn-primary btn-small">Send</button>
+            </form>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <%# 10e. Game over %>
+    <section id="screen-results" class="screen">
+      <div class="setup-container card results">
+        <div class="trophy" aria-hidden="true">🏆</div>
+        <h1 class="title">Game Over</h1>
+        <ol class="results-list" id="results-list"></ol>
+        <button type="button" class="btn btn-primary btn-large" id="play-again">Play Again</button>
+        <button type="button" class="btn btn-ghost" id="back-to-lobby" hidden>Back to Lobby</button>
+      </div>
+    </section>
+  <% end %>
+
+  <div class="error-banner" id="error-banner" role="alert" hidden></div>
+</main>

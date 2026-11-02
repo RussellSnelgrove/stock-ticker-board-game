@@ -8,5 +8,5 @@ class User < ApplicationRecord
   has_many :games, through: :players
   has_many :messages, dependent: :destroy
 
-  validates :display_name, presence: true
+  validates :display_name, presence: true, length: { maximum: 20 }
 end
