@@ -12,3 +12,18 @@ bonds_in_game_one:
   game: active_game
   stock: bonds
   current_price: 80
+
+oil_in_game_one:
+  game: active_game
+  stock: oil
+  current_price: 100
+
+silver_in_game_one:
+  game: active_game
+  stock: silver
+  current_price: 195
+
+gold_in_game_one:
+  game: active_game
+  stock: gold
+  current_price: 10

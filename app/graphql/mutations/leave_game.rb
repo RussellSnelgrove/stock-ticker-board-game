@@ -3,7 +3,7 @@
 
 module Mutations
   class LeaveGame < BaseMutation
-    description "Drop out of a game while preserving state. The player can rejoin later via JoinGame."
+    description "Drop out of a game while preserving state. If it is your turn, any remaining rolls are made for you and play passes on. You can rejoin later via JoinGame."
 
     argument :game_id, ID, required: true
 
@@ -11,19 +11,29 @@ module Mutations
     field :errors, [ String ], null: false
 
     def resolve(game_id:)
-      current_user = context[:current_user]
-      return { game: nil, errors: [ "You must be logged in" ] } unless current_user
+      game = find_game!(game_id)
+      player = find_player!(game)
+      raise GameRuleError, "You have already left this game" if player.dropped?
 
-      game = Game.find_by(id: game_id)
-      return { game: nil, errors: [ "Game not found" ] } unless game
+      rolls = []
+      had_turn = T.let(false, T::Boolean)
+      game.with_lock do
+        had_turn = game.clock_running? && game.active_player_id == player.id
+        if had_turn
+          service = DiceRollingService.new(game: game, player: player)
+          rolls << service.roll! while game.rolls_remaining_this_turn.positive?
+        end
+        player.update!(status: :dropped)
+        game.advance_turn! if had_turn
+      end
 
-      player = game.players.find_by(user: current_user)
-      return { game: nil, errors: [ "You are not in this game" ] } unless player
-      return { game: nil, errors: [ "You have already left this game" ] } if player.dropped?
-
-      player.update!(status: :dropped)
+      rolls.each { |roll| GameEvents.dice_rolled(game, roll) }
+      GameEvents.presence_changed(game, player)
+      GameEvents.turn_changed(game) if had_turn
 
       { game: game, errors: [] }
+    rescue GameRuleError => e
+      { game: nil, errors: [ e.message ] }
     end
   end
 end

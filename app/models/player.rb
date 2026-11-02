@@ -4,11 +4,14 @@
 class Player < ApplicationRecord
   extend T::Sig
 
+  STARTING_CASH = 500_000
+
   belongs_to :user
-  belongs_to :game
+  belongs_to :game, touch: true
 
   has_many :game_transactions, dependent: :destroy
   has_many :dice_rolls, dependent: :destroy
+  has_many :holdings, dependent: :destroy
 
   enum :status, {
     active: "active",
@@ -17,4 +20,15 @@ class Player < ApplicationRecord
 
   validates :cash, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :turn_position, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+
+  sig { returns(Integer) }
+  def portfolio_value
+    holdings.includes(:game_stock).sum(&:value)
+  end
+
+  # Cash plus the current market value of all holdings, in cents.
+  sig { returns(Integer) }
+  def current_net_worth
+    cash + portfolio_value
+  end
 end

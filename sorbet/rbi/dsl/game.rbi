@@ -391,8 +391,29 @@ class Game
   end
 
   module GeneratedAssociationMethods
+    sig { returns(T.nilable(::Player)) }
+    def active_player; end
+
+    sig { params(value: T.nilable(::Player)).void }
+    def active_player=(value); end
+
+    sig { returns(T::Boolean) }
+    def active_player_changed?; end
+
+    sig { returns(T::Boolean) }
+    def active_player_previously_changed?; end
+
+    sig { params(args: T.untyped, blk: T.untyped).returns(::Player) }
+    def build_active_player(*args, &blk); end
+
     sig { params(args: T.untyped, blk: T.untyped).returns(::User) }
     def build_host(*args, &blk); end
+
+    sig { params(args: T.untyped, blk: T.untyped).returns(::Player) }
+    def create_active_player(*args, &blk); end
+
+    sig { params(args: T.untyped, blk: T.untyped).returns(::Player) }
+    def create_active_player!(*args, &blk); end
 
     sig { params(args: T.untyped, blk: T.untyped).returns(::User) }
     def create_host(*args, &blk); end
@@ -468,8 +489,14 @@ class Game
     sig { params(value: T::Enumerable[::Player]).void }
     def players=(value); end
 
+    sig { returns(T.nilable(::Player)) }
+    def reload_active_player; end
+
     sig { returns(T.nilable(::User)) }
     def reload_host; end
+
+    sig { void }
+    def reset_active_player; end
 
     sig { void }
     def reset_host; end
@@ -544,6 +571,9 @@ class Game
 
     sig { params(args: T.untyped, blk: T.untyped).returns(PrivateAssociationRelation) }
     def limit(*args, &blk); end
+
+    sig { params(args: T.untyped, blk: T.untyped).returns(PrivateAssociationRelation) }
+    def listed(*args, &blk); end
 
     sig { params(args: T.untyped, blk: T.untyped).returns(PrivateAssociationRelation) }
     def lock(*args, &blk); end
@@ -649,6 +679,51 @@ class Game
   end
 
   module GeneratedAttributeMethods
+    sig { returns(T.nilable(::Integer)) }
+    def active_player_id; end
+
+    sig { params(value: T.nilable(::Integer)).returns(T.nilable(::Integer)) }
+    def active_player_id=(value); end
+
+    sig { returns(T::Boolean) }
+    def active_player_id?; end
+
+    sig { returns(T.nilable(::Integer)) }
+    def active_player_id_before_last_save; end
+
+    sig { returns(T.untyped) }
+    def active_player_id_before_type_cast; end
+
+    sig { returns(T::Boolean) }
+    def active_player_id_came_from_user?; end
+
+    sig { returns(T.nilable([T.nilable(::Integer), T.nilable(::Integer)])) }
+    def active_player_id_change; end
+
+    sig { returns(T.nilable([T.nilable(::Integer), T.nilable(::Integer)])) }
+    def active_player_id_change_to_be_saved; end
+
+    sig { params(from: T.untyped, to: T.untyped).returns(T::Boolean) }
+    def active_player_id_changed?(from: T.unsafe(nil), to: T.unsafe(nil)); end
+
+    sig { returns(T.nilable(::Integer)) }
+    def active_player_id_in_database; end
+
+    sig { returns(T.nilable([T.nilable(::Integer), T.nilable(::Integer)])) }
+    def active_player_id_previous_change; end
+
+    sig { params(from: T.untyped, to: T.untyped).returns(T::Boolean) }
+    def active_player_id_previously_changed?(from: T.unsafe(nil), to: T.unsafe(nil)); end
+
+    sig { returns(T.nilable(::Integer)) }
+    def active_player_id_previously_was; end
+
+    sig { returns(T.nilable(::Integer)) }
+    def active_player_id_was; end
+
+    sig { void }
+    def active_player_id_will_change!; end
+
     sig { returns(::ActiveSupport::TimeWithZone) }
     def created_at; end
 
@@ -1100,6 +1175,9 @@ class Game
     def remaining_time_will_change!; end
 
     sig { void }
+    def restore_active_player_id!; end
+
+    sig { void }
     def restore_created_at!; end
 
     sig { void }
@@ -1185,6 +1263,12 @@ class Game
 
     sig { void }
     def rolls_remaining_this_turn_will_change!; end
+
+    sig { returns(T.nilable([T.nilable(::Integer), T.nilable(::Integer)])) }
+    def saved_change_to_active_player_id; end
+
+    sig { params(from: T.untyped, to: T.untyped).returns(T::Boolean) }
+    def saved_change_to_active_player_id?(from: T.unsafe(nil), to: T.unsafe(nil)); end
 
     sig { returns(T.nilable([::ActiveSupport::TimeWithZone, ::ActiveSupport::TimeWithZone])) }
     def saved_change_to_created_at; end
@@ -1406,6 +1490,9 @@ class Game
     def updated_at_will_change!; end
 
     sig { params(from: T.untyped, to: T.untyped).returns(T::Boolean) }
+    def will_save_change_to_active_player_id?(from: T.unsafe(nil), to: T.unsafe(nil)); end
+
+    sig { params(from: T.untyped, to: T.untyped).returns(T::Boolean) }
     def will_save_change_to_created_at?(from: T.unsafe(nil), to: T.unsafe(nil)); end
 
     sig { params(from: T.untyped, to: T.untyped).returns(T::Boolean) }
@@ -1517,6 +1604,9 @@ class Game
 
     sig { params(args: T.untyped, blk: T.untyped).returns(PrivateRelation) }
     def limit(*args, &blk); end
+
+    sig { params(args: T.untyped, blk: T.untyped).returns(PrivateRelation) }
+    def listed(*args, &blk); end
 
     sig { params(args: T.untyped, blk: T.untyped).returns(PrivateRelation) }
     def lock(*args, &blk); end

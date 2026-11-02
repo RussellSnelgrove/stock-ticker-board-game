@@ -43,7 +43,23 @@ module Types
       description: "List games in waiting or in_progress status"
     sig { returns(ActiveRecord::Relation) }
     def games
-      Game.where(status: [ :waiting, :in_progress ]).order(created_at: :desc)
+      Game.listed.includes(:host, :players).order(created_at: :desc)
+    end
+
+    field :me, Types::UserType, null: true, description: "The current user, if they have picked a name"
+    sig { returns(T.nilable(User)) }
+    def me
+      context[:current_user]
+    end
+
+    field :transactions, Types::GameTransactionType.connection_type, null: false,
+      description: "A game's transaction history, newest first" do
+      argument :game_id, ID, required: true
+    end
+    sig { params(game_id: String).returns(ActiveRecord::Relation) }
+    def transactions(game_id:)
+      GameTransaction.joins(:player).where(players: { game_id: game_id })
+        .includes(player: :user, game_stock: :stock).order(id: :desc)
     end
 
     # TODO: remove me

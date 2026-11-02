@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_11_063636) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_12_010100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -57,6 +57,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_11_063636) do
   end
 
   create_table "games", force: :cascade do |t|
+    t.bigint "active_player_id"
     t.datetime "created_at", null: false
     t.integer "current_turn", default: 0, null: false
     t.integer "duration", null: false
@@ -69,8 +70,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_11_063636) do
     t.datetime "starts_at"
     t.string "status", default: "waiting", null: false
     t.datetime "updated_at", null: false
+    t.index ["active_player_id"], name: "index_games_on_active_player_id"
     t.index ["host_id"], name: "index_games_on_host_id"
     t.index ["invite_code"], name: "index_games_on_invite_code", unique: true
+  end
+
+  create_table "holdings", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "game_stock_id", null: false
+    t.bigint "player_id", null: false
+    t.integer "quantity", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["game_stock_id"], name: "index_holdings_on_game_stock_id"
+    t.index ["player_id", "game_stock_id"], name: "index_holdings_on_player_id_and_game_stock_id", unique: true
+    t.index ["player_id"], name: "index_holdings_on_player_id"
   end
 
   create_table "messages", force: :cascade do |t|
@@ -90,6 +103,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_11_063636) do
     t.integer "final_rank"
     t.bigint "game_id", null: false
     t.integer "net_worth"
+    t.boolean "online", default: false, null: false
     t.string "status", default: "active", null: false
     t.integer "turn_position", null: false
     t.datetime "updated_at", null: false
@@ -120,7 +134,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_11_063636) do
   add_foreign_key "game_stocks", "stocks"
   add_foreign_key "game_transactions", "game_stocks"
   add_foreign_key "game_transactions", "players"
+  add_foreign_key "games", "players", column: "active_player_id", on_delete: :nullify
   add_foreign_key "games", "users", column: "host_id"
+  add_foreign_key "holdings", "game_stocks"
+  add_foreign_key "holdings", "players"
   add_foreign_key "messages", "games"
   add_foreign_key "messages", "users"
   add_foreign_key "players", "games"

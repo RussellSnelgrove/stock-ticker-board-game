@@ -22,25 +22,28 @@ module Mutations
 
       game = Game.new(name: name, duration: duration, host: current_user)
 
-      if game.save
+      saved = Game.transaction do
+        next false unless game.save
+
         initialize_game_stocks(game)
         add_host_as_player(game, current_user)
-        { game: game, errors: [] }
-      else
-        { game: nil, errors: game.errors.full_messages }
+        true
       end
+      return { game: nil, errors: game.errors.full_messages } unless saved
+
+      { game: game, errors: [] }
     end
 
     private
 
     def initialize_game_stocks(game)
-      Stock.all.each do |stock|
-        game.game_stocks.create!(stock: stock, current_price: 100)
+      Stock.in_board_order.each do |stock|
+        game.game_stocks.create!(stock: stock, current_price: GameStock::STARTING_PRICE)
       end
     end
 
     def add_host_as_player(game, user)
-      game.players.create!(user: user, cash: 500_000, turn_position: 0, status: :active)
+      game.players.create!(user: user, cash: Player::STARTING_CASH, turn_position: 0, status: :active)
     end
   end
 end

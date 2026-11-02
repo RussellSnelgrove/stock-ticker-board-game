@@ -9,6 +9,12 @@ module ApplicationCable
     sig { void }
     def connect
       self.current_user = find_verified_user
+      Presence.update(current_user, online: true)
+    end
+
+    sig { void }
+    def disconnect
+      Presence.update(current_user, online: false) if current_user
     end
 
     private

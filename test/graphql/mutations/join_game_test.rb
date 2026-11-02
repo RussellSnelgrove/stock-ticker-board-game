@@ -162,4 +162,29 @@ class Mutations::JoinGameTest < ActiveSupport::TestCase
     assert_nil data["game"]
     assert_includes data["errors"].first, "ended"
   end
+
+  test "a mid-game joiner waits for their turn" do
+    new_user = User.create!(display_name: "Dave")
+    StockTickerSchema.execute(MUTATION, variables: { inviteCode: "ACT001" }, context: { current_user: new_user })
+    assert_equal players(:player_two), games(:active_game).reload.active_player
+  end
+
+  test "rejoining a game where nobody holds the turn takes the turn" do
+    game = games(:active_game)
+    game.players.update_all(status: "dropped")
+    game.update!(active_player: nil)
+
+    StockTickerSchema.execute(MUTATION, variables: { inviteCode: "ACT001" }, context: { current_user: users(:three) })
+
+    assert_equal players(:dropped_player), game.reload.active_player
+  end
+
+  test "a multiplayer game has no player limit" do
+    20.times do |i|
+      user = User.create!(display_name: "Player #{i}")
+      result = StockTickerSchema.execute(MUTATION, variables: { inviteCode: "WAIT01" }, context: { current_user: user })
+      assert_empty result.to_h.dig("data", "joinGame", "errors")
+    end
+    assert_equal 21, games(:waiting_game).players.count
+  end
 end

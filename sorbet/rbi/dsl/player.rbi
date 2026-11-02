@@ -437,6 +437,20 @@ class Player
     sig { params(value: T::Enumerable[::GameTransaction]).void }
     def game_transactions=(value); end
 
+    sig { returns(T::Array[T.untyped]) }
+    def holding_ids; end
+
+    sig { params(ids: T::Array[T.untyped]).returns(T::Array[T.untyped]) }
+    def holding_ids=(ids); end
+
+    # This method is created by ActiveRecord on the `Player` class because it declared `has_many :holdings`.
+    # 🔗 [Rails guide for `has_many` association](https://guides.rubyonrails.org/association_basics.html#the-has-many-association)
+    sig { returns(::Holding::PrivateCollectionProxy) }
+    def holdings; end
+
+    sig { params(value: T::Enumerable[::Holding]).void }
+    def holdings=(value); end
+
     sig { returns(T.nilable(::Game)) }
     def reload_game; end
 
@@ -714,6 +728,51 @@ class Player
     sig { void }
     def created_at_will_change!; end
 
+    sig { returns(T.nilable(::Integer)) }
+    def final_rank; end
+
+    sig { params(value: T.nilable(::Integer)).returns(T.nilable(::Integer)) }
+    def final_rank=(value); end
+
+    sig { returns(T::Boolean) }
+    def final_rank?; end
+
+    sig { returns(T.nilable(::Integer)) }
+    def final_rank_before_last_save; end
+
+    sig { returns(T.untyped) }
+    def final_rank_before_type_cast; end
+
+    sig { returns(T::Boolean) }
+    def final_rank_came_from_user?; end
+
+    sig { returns(T.nilable([T.nilable(::Integer), T.nilable(::Integer)])) }
+    def final_rank_change; end
+
+    sig { returns(T.nilable([T.nilable(::Integer), T.nilable(::Integer)])) }
+    def final_rank_change_to_be_saved; end
+
+    sig { params(from: T.untyped, to: T.untyped).returns(T::Boolean) }
+    def final_rank_changed?(from: T.unsafe(nil), to: T.unsafe(nil)); end
+
+    sig { returns(T.nilable(::Integer)) }
+    def final_rank_in_database; end
+
+    sig { returns(T.nilable([T.nilable(::Integer), T.nilable(::Integer)])) }
+    def final_rank_previous_change; end
+
+    sig { params(from: T.untyped, to: T.untyped).returns(T::Boolean) }
+    def final_rank_previously_changed?(from: T.unsafe(nil), to: T.unsafe(nil)); end
+
+    sig { returns(T.nilable(::Integer)) }
+    def final_rank_previously_was; end
+
+    sig { returns(T.nilable(::Integer)) }
+    def final_rank_was; end
+
+    sig { void }
+    def final_rank_will_change!; end
+
     sig { returns(::Integer) }
     def game_id; end
 
@@ -849,11 +908,104 @@ class Player
     sig { void }
     def id_will_change!; end
 
+    sig { returns(T.nilable(::Integer)) }
+    def net_worth; end
+
+    sig { params(value: T.nilable(::Integer)).returns(T.nilable(::Integer)) }
+    def net_worth=(value); end
+
+    sig { returns(T::Boolean) }
+    def net_worth?; end
+
+    sig { returns(T.nilable(::Integer)) }
+    def net_worth_before_last_save; end
+
+    sig { returns(T.untyped) }
+    def net_worth_before_type_cast; end
+
+    sig { returns(T::Boolean) }
+    def net_worth_came_from_user?; end
+
+    sig { returns(T.nilable([T.nilable(::Integer), T.nilable(::Integer)])) }
+    def net_worth_change; end
+
+    sig { returns(T.nilable([T.nilable(::Integer), T.nilable(::Integer)])) }
+    def net_worth_change_to_be_saved; end
+
+    sig { params(from: T.untyped, to: T.untyped).returns(T::Boolean) }
+    def net_worth_changed?(from: T.unsafe(nil), to: T.unsafe(nil)); end
+
+    sig { returns(T.nilable(::Integer)) }
+    def net_worth_in_database; end
+
+    sig { returns(T.nilable([T.nilable(::Integer), T.nilable(::Integer)])) }
+    def net_worth_previous_change; end
+
+    sig { params(from: T.untyped, to: T.untyped).returns(T::Boolean) }
+    def net_worth_previously_changed?(from: T.unsafe(nil), to: T.unsafe(nil)); end
+
+    sig { returns(T.nilable(::Integer)) }
+    def net_worth_previously_was; end
+
+    sig { returns(T.nilable(::Integer)) }
+    def net_worth_was; end
+
+    sig { void }
+    def net_worth_will_change!; end
+
+    sig { returns(T::Boolean) }
+    def online; end
+
+    sig { params(value: T::Boolean).returns(T::Boolean) }
+    def online=(value); end
+
+    sig { returns(T::Boolean) }
+    def online?; end
+
+    sig { returns(T.nilable(T::Boolean)) }
+    def online_before_last_save; end
+
+    sig { returns(T.untyped) }
+    def online_before_type_cast; end
+
+    sig { returns(T::Boolean) }
+    def online_came_from_user?; end
+
+    sig { returns(T.nilable([T::Boolean, T::Boolean])) }
+    def online_change; end
+
+    sig { returns(T.nilable([T::Boolean, T::Boolean])) }
+    def online_change_to_be_saved; end
+
+    sig { params(from: T.untyped, to: T.untyped).returns(T::Boolean) }
+    def online_changed?(from: T.unsafe(nil), to: T.unsafe(nil)); end
+
+    sig { returns(T.nilable(T::Boolean)) }
+    def online_in_database; end
+
+    sig { returns(T.nilable([T::Boolean, T::Boolean])) }
+    def online_previous_change; end
+
+    sig { params(from: T.untyped, to: T.untyped).returns(T::Boolean) }
+    def online_previously_changed?(from: T.unsafe(nil), to: T.unsafe(nil)); end
+
+    sig { returns(T.nilable(T::Boolean)) }
+    def online_previously_was; end
+
+    sig { returns(T.nilable(T::Boolean)) }
+    def online_was; end
+
+    sig { void }
+    def online_will_change!; end
+
     sig { void }
     def restore_cash!; end
 
     sig { void }
     def restore_created_at!; end
+
+    sig { void }
+    def restore_final_rank!; end
 
     sig { void }
     def restore_game_id!; end
@@ -863,6 +1015,12 @@ class Player
 
     sig { void }
     def restore_id_value!; end
+
+    sig { void }
+    def restore_net_worth!; end
+
+    sig { void }
+    def restore_online!; end
 
     sig { void }
     def restore_status!; end
@@ -888,6 +1046,12 @@ class Player
     sig { params(from: T.untyped, to: T.untyped).returns(T::Boolean) }
     def saved_change_to_created_at?(from: T.unsafe(nil), to: T.unsafe(nil)); end
 
+    sig { returns(T.nilable([T.nilable(::Integer), T.nilable(::Integer)])) }
+    def saved_change_to_final_rank; end
+
+    sig { params(from: T.untyped, to: T.untyped).returns(T::Boolean) }
+    def saved_change_to_final_rank?(from: T.unsafe(nil), to: T.unsafe(nil)); end
+
     sig { returns(T.nilable([::Integer, ::Integer])) }
     def saved_change_to_game_id; end
 
@@ -905,6 +1069,18 @@ class Player
 
     sig { params(from: T.untyped, to: T.untyped).returns(T::Boolean) }
     def saved_change_to_id_value?(from: T.unsafe(nil), to: T.unsafe(nil)); end
+
+    sig { returns(T.nilable([T.nilable(::Integer), T.nilable(::Integer)])) }
+    def saved_change_to_net_worth; end
+
+    sig { params(from: T.untyped, to: T.untyped).returns(T::Boolean) }
+    def saved_change_to_net_worth?(from: T.unsafe(nil), to: T.unsafe(nil)); end
+
+    sig { returns(T.nilable([T::Boolean, T::Boolean])) }
+    def saved_change_to_online; end
+
+    sig { params(from: T.untyped, to: T.untyped).returns(T::Boolean) }
+    def saved_change_to_online?(from: T.unsafe(nil), to: T.unsafe(nil)); end
 
     sig { returns(T.nilable([::String, ::String])) }
     def saved_change_to_status; end
@@ -1117,6 +1293,9 @@ class Player
     def will_save_change_to_created_at?(from: T.unsafe(nil), to: T.unsafe(nil)); end
 
     sig { params(from: T.untyped, to: T.untyped).returns(T::Boolean) }
+    def will_save_change_to_final_rank?(from: T.unsafe(nil), to: T.unsafe(nil)); end
+
+    sig { params(from: T.untyped, to: T.untyped).returns(T::Boolean) }
     def will_save_change_to_game_id?(from: T.unsafe(nil), to: T.unsafe(nil)); end
 
     sig { params(from: T.untyped, to: T.untyped).returns(T::Boolean) }
@@ -1124,6 +1303,12 @@ class Player
 
     sig { params(from: T.untyped, to: T.untyped).returns(T::Boolean) }
     def will_save_change_to_id_value?(from: T.unsafe(nil), to: T.unsafe(nil)); end
+
+    sig { params(from: T.untyped, to: T.untyped).returns(T::Boolean) }
+    def will_save_change_to_net_worth?(from: T.unsafe(nil), to: T.unsafe(nil)); end
+
+    sig { params(from: T.untyped, to: T.untyped).returns(T::Boolean) }
+    def will_save_change_to_online?(from: T.unsafe(nil), to: T.unsafe(nil)); end
 
     sig { params(from: T.untyped, to: T.untyped).returns(T::Boolean) }
     def will_save_change_to_status?(from: T.unsafe(nil), to: T.unsafe(nil)); end

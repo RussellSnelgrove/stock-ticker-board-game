@@ -25,3 +25,10 @@ dropped_player:
   cash: 120000
   status: dropped
   turn_position: 2
+
+solo_player:
+  user: four
+  game: solo_game
+  cash: 500000
+  status: active
+  turn_position: 0

@@ -11,25 +11,17 @@ module Mutations
     field :errors, [ String ], null: false
 
     def resolve(game_id:)
-      current_user = context[:current_user]
-      return { game: nil, errors: [ "You must be logged in" ] } unless current_user
-
-      game = Game.find_by(id: game_id)
-      return { game: nil, errors: [ "Game not found" ] } unless game
-
-      unless game.host_id == current_user.id
-        return { game: nil, errors: [ "Only the host can start the game" ] }
-      end
-
-      if game.players.active.empty?
-        return { game: nil, errors: [ "Cannot start a game with no players" ] }
-      end
+      user = current_user!
+      game = find_game!(game_id)
+      raise GameRuleError, "Only the host can start the game" unless game.host_id == user.id
+      raise GameRuleError, "Cannot start a game with no players" if game.players.active.empty?
 
       game.start!
       GameClockExpiryJob.set(wait_until: game.ends_at).perform_later(game.id)
+      GameEvents.game_started(game)
 
       { game: game, errors: [] }
-    rescue RuntimeError => e
+    rescue GameRuleError => e
       { game: nil, errors: [ e.message ] }
     end
   end

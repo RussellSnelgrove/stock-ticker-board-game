@@ -119,30 +119,37 @@ class GameTest < ActiveSupport::TestCase
   end
 
   test "start! raises when game is not waiting" do
-    assert_raises(RuntimeError) { games(:active_game).start! }
+    assert_raises(GameRuleError) { games(:active_game).start! }
   end
 
-  test "pause! transitions in_progress game to paused" do
-    game = games(:active_game)
+  test "pause! transitions a solo in_progress game to paused" do
+    game = games(:solo_game)
     game.pause!
     assert game.paused?
-    assert_not_nil game.remaining_time
+    assert_operator game.remaining_time, :>, 0
+  end
+
+  test "pause! raises for a multiplayer game" do
+    error = assert_raises(GameRuleError) { games(:active_game).pause! }
+    assert_equal "Only solo games can be paused", error.message
   end
 
   test "pause! raises when game is not in_progress" do
-    assert_raises(RuntimeError) { games(:waiting_game).pause! }
+    assert_raises(GameRuleError) { games(:waiting_game).pause! }
   end
 
-  test "resume! transitions paused game back to in_progress" do
-    game = games(:active_game)
+  test "resume! restarts the clock with the time that was left" do
+    game = games(:solo_game)
     game.pause!
+    left = T.must(game.remaining_time)
     game.resume!
     assert game.in_progress?
     assert_nil game.remaining_time
+    assert_in_delta Time.current + left, game.ends_at, 2
   end
 
   test "resume! raises when game is not paused" do
-    assert_raises(RuntimeError) { games(:active_game).resume! }
+    assert_raises(GameRuleError) { games(:active_game).resume! }
   end
 
   test "complete! transitions in_progress game to completed" do
@@ -152,28 +159,65 @@ class GameTest < ActiveSupport::TestCase
   end
 
   test "complete! raises when game is not in_progress" do
-    assert_raises(RuntimeError) { games(:waiting_game).complete! }
+    assert_raises(GameRuleError) { games(:waiting_game).complete! }
   end
 
-  # Computed --------------------------------------------------------------
-
-  test "active_player returns nil when game is not in_progress" do
-    assert_nil games(:waiting_game).active_player
+  test "start! gives the turn to the first player in join order" do
+    game = games(:waiting_game)
+    game.start!
+    assert_equal players(:waiting_game_host), game.active_player
+    assert_equal Game::ROLLS_PER_TURN, game.rolls_remaining_this_turn
   end
 
-  test "active_player returns the player whose turn it is" do
+  test "advance_turn! passes play to the next active player and skips dropped players" do
     game = games(:active_game)
-    # current_turn=3, 2 active players → 3 % 2 = 1 → player at turn_position 1
-    assert_equal players(:player_two), game.active_player
+    game.update!(rolls_remaining_this_turn: 0)
+    game.advance_turn!
+
+    # player_two (position 1) → dropped_player (2) is skipped → wraps to player_one (0)
+    assert_equal players(:player_one), game.active_player
+    assert_equal 4, game.current_turn
+    assert_equal Game::ROLLS_PER_TURN, game.rolls_remaining_this_turn
   end
 
-  test "active_player returns nil when there are no active players" do
+  test "a mid-game join does not change whose turn it is" do
+    game = games(:active_game)
+    game.players.create!(user: User.create!(display_name: "Dave"), turn_position: 3)
+    assert_equal players(:player_two), game.reload.active_player
+  end
+
+  test "a player who joined mid-game gets a turn after the existing players" do
+    game = games(:active_game)
+    dave = game.players.create!(user: User.create!(display_name: "Dave"), turn_position: 3)
+    game.advance_turn!
+    assert_equal dave, game.active_player
+  end
+
+  test "advance_turn! leaves the turn vacant when nobody is active" do
     game = games(:active_game)
     game.players.update_all(status: "dropped")
+    game.advance_turn!
     assert_nil game.active_player
   end
 
-  # Callbacks -------------------------------------------------------------
+  test "assign_turn_if_vacant! gives the turn to a rejoining player" do
+    game = games(:active_game)
+    game.update!(active_player: nil)
+    game.assign_turn_if_vacant!
+    assert_equal players(:player_one), game.active_player
+  end
+
+  test "clock_running? is false once ends_at has passed" do
+    game = games(:active_game)
+    assert game.clock_running?
+    game.update_columns(ends_at: 1.second.ago)
+    assert_not game.clock_running?
+  end
+
+  test "solo? is true only for a single-player game" do
+    assert games(:solo_game).solo?
+    assert_not games(:active_game).solo?
+  end
 
   test "invite_code is auto-generated on create" do
     game = Game.create!(name: "Auto Code Game", host: users(:one), duration: 15)

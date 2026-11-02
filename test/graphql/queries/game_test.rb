@@ -69,7 +69,7 @@ class GameQueryTest < ActiveSupport::TestCase
   end
 
   test "returns remaining_time for paused game" do
-    game = games(:active_game)
+    game = games(:solo_game)
     game.pause!
     result = StockTickerSchema.execute(QUERY_BY_ID, variables: { id: game.id }, context: { current_user: users(:one) })
 

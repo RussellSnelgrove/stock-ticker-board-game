@@ -81,4 +81,26 @@ class Mutations::LeaveGameTest < ActiveSupport::TestCase
     assert_nil data["game"]
     assert_includes data["errors"].first, "not found"
   end
+
+  test "when the active player leaves mid-turn their remaining rolls are made and play passes on" do
+    game = games(:active_game)
+    game.update!(rolls_remaining_this_turn: 1)
+
+    assert_difference "DiceRoll.count", 1 do
+      StockTickerSchema.execute(MUTATION, variables: { gameId: game.id }, context: { current_user: users(:two) })
+    end
+
+    game.reload
+    assert players(:player_two).reload.dropped?
+    assert_equal players(:player_one), game.active_player
+    assert_equal Game::ROLLS_PER_TURN, game.rolls_remaining_this_turn
+  end
+
+  test "when a player who is not active leaves, the turn does not change" do
+    game = games(:active_game)
+    assert_no_difference "DiceRoll.count" do
+      StockTickerSchema.execute(MUTATION, variables: { gameId: game.id }, context: { current_user: users(:one) })
+    end
+    assert_equal players(:player_two), game.reload.active_player
+  end
 end

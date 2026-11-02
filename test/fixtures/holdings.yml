@@ -1,0 +1,9 @@
+player_one_grain:
+  player: player_one
+  game_stock: grain_in_game_one
+  quantity: 500
+
+player_two_bonds:
+  player: player_two
+  game_stock: bonds_in_game_one
+  quantity: 1000
