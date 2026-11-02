@@ -16,6 +16,12 @@ module GeneratedUrlHelpersModule
   def graphql_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
+  def join_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def logout_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
   def new_rails_conductor_inbound_email_source_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
@@ -101,6 +107,9 @@ module GeneratedUrlHelpersModule
 
   sig { params(args: T.untyped).returns(String) }
   def rails_storage_redirect_url(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
+  def root_url(*args); end
 
   sig { params(args: T.untyped).returns(String) }
   def update_rails_disk_service_url(*args); end
