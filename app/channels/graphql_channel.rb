@@ -8,7 +8,9 @@ class GraphqlChannel < ApplicationCable::Channel
     @subscription_ids = []
   end
 
-  sig { params(data: T::Hash[String, T.untyped]).void }
+  # ActionCable passes `data` only when method(:execute).arity == 1. sorbet-runtime's
+  # wrapper reports arity -1, so the signature must not wrap the method at runtime.
+  T::Sig::WithoutRuntime.sig { params(data: T::Hash[String, T.untyped]).void }
   def execute(data)
     query = data["query"]
     variables = ensure_hash(data["variables"])
