@@ -21,6 +21,9 @@ class Player < ApplicationRecord
   validates :cash, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :turn_position, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
+  # The lobby shows player counts, so joins and drops expire the listing.
+  after_commit :expire_game_listing, if: :joined_or_left?
+
   sig { returns(Integer) }
   def portfolio_value
     holdings.includes(:game_stock).sum(&:value)
@@ -30,5 +33,17 @@ class Player < ApplicationRecord
   sig { returns(Integer) }
   def current_net_worth
     cash + portfolio_value
+  end
+
+  private
+
+  sig { returns(T::Boolean) }
+  def joined_or_left?
+    previously_new_record? || saved_change_to_status? || destroyed?
+  end
+
+  sig { void }
+  def expire_game_listing
+    Game.expire_listing_cache
   end
 end

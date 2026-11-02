@@ -36,6 +36,21 @@ class Game < ApplicationRecord
   }
 
   before_validation :generate_invite_code, on: :create
+  after_commit :expire_listing_cache, if: :listing_changed?
+
+  LISTING_CACHE_KEY = "games/listed"
+
+  # IDs of games shown in the lobby, newest first. Expired whenever a game is created,
+  # changes status, or gains or loses a player.
+  sig { returns(T::Array[Integer]) }
+  def self.listed_ids
+    Rails.cache.fetch(LISTING_CACHE_KEY) { listed.order(created_at: :desc).ids }
+  end
+
+  sig { void }
+  def self.expire_listing_cache
+    Rails.cache.delete(LISTING_CACHE_KEY)
+  end
 
   # Transitions ---------------------------------------------------------------
 
@@ -130,6 +145,16 @@ class Game < ApplicationRecord
   end
 
   private
+
+  sig { returns(T::Boolean) }
+  def listing_changed?
+    previously_new_record? || saved_change_to_status? || destroyed?
+  end
+
+  sig { void }
+  def expire_listing_cache
+    Game.expire_listing_cache
+  end
 
   sig { void }
   def generate_invite_code

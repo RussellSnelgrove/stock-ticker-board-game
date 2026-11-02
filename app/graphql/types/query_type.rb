@@ -43,7 +43,7 @@ module Types
       description: "List games in waiting or in_progress status"
     sig { returns(ActiveRecord::Relation) }
     def games
-      Game.listed.includes(:host, :players).order(created_at: :desc)
+      Game.where(id: Game.listed_ids).includes(:host, :players).order(created_at: :desc)
     end
 
     field :me, Types::UserType, null: true, description: "The current user, if they have picked a name"
