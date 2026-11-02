@@ -124,8 +124,8 @@ Visit `http://localhost:3000` to start playing.
 ## Running Tests
 
 ```bash
-# Inside Docker
-docker-compose exec app bin/rails test
+# Inside Docker (uses the stock_ticker_test database, not development)
+make test
 
 # Or locally
 bundle exec rails test

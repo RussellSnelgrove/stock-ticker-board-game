@@ -15,7 +15,7 @@ Short, actionable guidance so an AI agent is productive immediately.
   - Start Colima: `colima start --cpu 4 --memory 6 --vm-type vz --vz-rosetta`
   - Run app: `docker-compose up --build`
   - First-time DB setup (in second terminal): `docker-compose exec app bin/docker-setup`
-  - Tests (inside container): `docker-compose exec app bin/rails test` or locally `bundle exec rails test`.
+  - Tests (inside container): `make test`, which points the run at the `stock_ticker_test` database; locally `bundle exec rails test`.
 
 - **Important project conventions** (do not change without confirmation):
   - Stock ordering is fixed: Grain, Industrial, Bonds, Oil, Silver, Gold. Many client layouts assume this order.
@@ -42,7 +42,7 @@ Short, actionable guidance so an AI agent is productive immediately.
 
 - **Testing & background jobs**:
   - Background jobs (game clock expiry) must be scheduled via Active Job; in development the desired adapter is `:async` (see `OPEN-ISSUES.md`).
-  - Use `docker-compose exec app bin/rails test` to run tests in the canonical environment.
+  - Use `make test` to run tests in the canonical environment. A bare `docker-compose exec app bin/rails test` inherits the development `DATABASE_URL` and writes fixtures into the development database.
 
 - **Client-specific patterns** (examples)
   - Importmap usage: client modules use bare specifiers (e.g., `import GameClient from "game_client"`) and are pinned in `config/importmap.rb`.

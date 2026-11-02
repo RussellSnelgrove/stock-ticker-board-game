@@ -342,7 +342,7 @@ App runs at **http://localhost:3000**
 ### Common Docker Commands
 ```bash
 docker-compose exec app bin/rails console
-docker-compose exec app bin/rails test
+make test   # runs in the app container against stock_ticker_test
 docker-compose logs -f app
 docker-compose down
 docker-compose down -v          # wipe all data
@@ -365,7 +365,7 @@ bin/rails server
 
 ### Tests
 ```bash
-docker-compose exec app bin/rails test   # Docker
+make test                                # Docker (overrides DATABASE_URL to the test database)
 bundle exec rails test                   # Local
 ```
 
